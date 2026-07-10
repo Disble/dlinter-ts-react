@@ -47,9 +47,11 @@ const documentationContexts = [
 ];
 const allDlinterRulesOff: Linter.RulesRecord = {
   'dlinter/composition-only-delivery': 'off',
+  'dlinter/folder-ownership': 'off',
   'dlinter/hook-anatomy': 'off',
   'dlinter/no-infrastructure-in-view': 'off',
   'dlinter/no-view-effects': 'off',
+  'dlinter/pure-index-barrel': 'off',
   'dlinter/readonly-props': 'off',
   'dlinter/require-exported-variable-jsdoc': 'off',
   'dlinter/strict-colocation': 'off',
@@ -264,6 +266,30 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         'dlinter/composition-only-delivery': 'error',
         'dlinter/strict-colocation': 'error',
         'dlinter/no-infrastructure-in-view': infrastructureRule,
+      },
+    },
+    // Barrel entrypoints only re-export; the barrel content contract is
+    // single-file, so ESLint owns it (the folder topology lives below).
+    {
+      files: ['**/index.ts'],
+      ignores: productionTestGlobs,
+      plugins: {
+        dlinter: pluginBase,
+      },
+      rules: {
+        'dlinter/pure-index-barrel': 'error',
+      },
+    },
+    // Split modules are folder-owned. The rule reads real sibling files and
+    // self-guards role files, index.ts, and declaration files.
+    {
+      files: ['src/**/*.ts'],
+      ignores: documentationExemptGlobs,
+      plugins: {
+        dlinter: pluginBase,
+      },
+      rules: {
+        'dlinter/folder-ownership': 'error',
       },
     },
     // Public documentation is global by default across maintained TypeScript.

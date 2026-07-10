@@ -181,6 +181,29 @@ describe('recommended config', () => {
     expect(errorRuleIds(result)).toContain('dlinter/require-exported-variable-jsdoc');
   });
 
+  it('requires index.ts entrypoints to be pure barrels', async () => {
+    const result = await lintVirtualFile(
+      `
+        export const registry = new Map();
+      `,
+      'src/features/clock/index.ts',
+    );
+
+    expect(errorRuleIds(result)).toContain('dlinter/pure-index-barrel');
+  });
+
+  it('keeps a pure re-export barrel green', async () => {
+    const result = await lintVirtualFile(
+      `
+        export { Clock } from './Clock';
+        export type { ClockProps } from './clock.types';
+      `,
+      'src/features/clock/index.ts',
+    );
+
+    expect(result?.errorCount).toBe(0);
+  });
+
   it('leaves test files outside the architecture contract', async () => {
     const result = await lintVirtualFile(
       `

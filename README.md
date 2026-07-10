@@ -35,6 +35,7 @@ Extracted from the governance system proven in `autoreas-bridge/frontend`.
 | Presets | Named after architecture concepts (`dumb-ui`, later `strict-colocation`, `hook-anatomy`, boundary presets) — never after a consuming project. Project specifics are rule OPTIONS, not preset names. |
 | Structure | Single package: plugin + configs + structural checker + CLI. One install, one version. |
 | Testing | TDD with vitest. Rules driven by `RuleTester`; configs driven through a real `ESLint` instance; CLI driven against temp directories. A rule without a RED test proving it fires is a disabled rule. |
+| Don't reinvent the wheel | Before writing a custom rule, survey the ecosystem. Bundled wheels already in the preset: `max-lines`, `check-file` (naming/placement), `import-x/no-cycle`, `react-hooks`, `jsdoc`, `sonarjs`, `react-doctor`. Custom rules exist ONLY for contracts no plugin ships (e.g. `pure-index-barrel` — `eslint-plugin-barrel-files` bans barrels, we require pure ones; `folder-ownership` — `eslint-plugin-project-structure` validates static trees, not conditional sibling contracts). Candidate wheel for future layer presets: `eslint-plugin-boundaries`. |
 | Gate | The package self-hosts its own lefthook gate (typecheck + test) — it eats its own dog food. |
 
 ## Current state
@@ -48,15 +49,17 @@ Extracted from the governance system proven in `autoreas-bridge/frontend`.
 | `dlinter/no-infrastructure-in-view` — configurable boundary (import patterns + runtime globals) | ✅ shipped |
 | `dlinter/composition-only-delivery` — delivery layer composes, never orchestrates | ✅ shipped |
 | `dlinter/require-exported-variable-jsdoc` — documentation contract for exported variables | ✅ shipped |
+| `dlinter/pure-index-barrel` — `index.ts` entrypoints only re-export | ✅ shipped |
+| `dlinter/folder-ownership` — split modules live in folders named after them, with `index.ts` | ✅ shipped |
 | `configs.recommended` / `createRecommendedConfig(options)` — full governance preset | ✅ shipped |
 | `configs['dumb-ui']` preset | ✅ shipped |
 | `dlinter init` (lefthook gate scaffold) | ✅ shipped |
 
 ## Roadmap
 
-- [ ] Structural checker (`dlinter check`) — pure `index.ts` barrels, folder-owned split modules (cross-file topology ESLint cannot prove)
 - [ ] File-size advisory (400 warn / 500 error) in the gate
 - [ ] `dlinter init` — prettier config + package-manager detection (bun/pnpm/npm) for the lefthook template
+- [ ] Layer/boundary preset built on `eslint-plugin-boundaries` (hexagonal element types) instead of a custom import-graph rule
 
 ## Development
 
