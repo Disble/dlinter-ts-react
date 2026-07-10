@@ -10,7 +10,6 @@ const allChecks = [
   'zod-import',
 ] as const;
 
-const mainModuleNamePattern = /^(use[A-Z]|[A-Z])/u;
 const zodImportPattern = /^zod(?:\/.*)?$/u;
 
 /**
@@ -64,12 +63,12 @@ export const strictColocation: Rule.RuleModule = {
     }
 
     if (enabled.has('root-helper-function')) {
+      // Any unexported root-level function is a helper — exported main
+      // functions live under ExportNamedDeclaration and never match here.
+      // Capitalized "private components" are not an exception; that mirrors
+      // the enforced behavior of the source system's structural checker.
       visitor['Program > FunctionDeclaration'] = (node: Rule.Node) => {
-        const functionName = node.type === 'FunctionDeclaration' ? (node.id?.name ?? '') : '';
-
-        if (!mainModuleNamePattern.test(functionName)) {
-          context.report({ node, messageId: 'rootHelperFunction' });
-        }
+        context.report({ node, messageId: 'rootHelperFunction' });
       };
     }
 

@@ -71,6 +71,19 @@ ruleTester.run('strict-colocation', strictColocation, {
       errors: [{ messageId: 'rootHelperFunction' }],
     },
     {
+      name: 'unexported capitalized root functions are helpers too, not private components',
+      code: `
+        function NavItem() {
+          return <li />;
+        }
+
+        export function AppLayout() {
+          return <nav><NavItem /></nav>;
+        }
+      `,
+      errors: [{ messageId: 'rootHelperFunction' }],
+    },
+    {
       name: 'exporting the main module as a root-level const is reported',
       code: `
         export const Badge = () => <span />;
