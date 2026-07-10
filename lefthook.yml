@@ -2,6 +2,9 @@
 pre-commit:
   parallel: false
   jobs:
+    - name: fallow
+      run: bun x fallow audit --quiet
+
     - name: typecheck
       run: bun run typecheck
 
