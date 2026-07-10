@@ -1,0 +1,9 @@
+# Self-hosted gate: this package enforces on itself what it ships to consumers.
+pre-commit:
+  parallel: false
+  jobs:
+    - name: typecheck
+      run: bun run typecheck
+
+    - name: test
+      run: bun run test
