@@ -39,6 +39,10 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
+      # Trusted publishing (OIDC) needs npm >= 11.5.1; node 22 ships npm 10.
+      - name: Update npm for trusted publishing
+        run: npm install -g npm@latest
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -48,8 +52,7 @@ jobs:
       - name: Tarball end-to-end
         run: bun run e2e:pack
 
+      # Authenticates via OIDC trusted publishing — no token, provenance built in.
       # prepublishOnly re-runs validate + build, so a stale dist can never ship.
       - name: Publish
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public

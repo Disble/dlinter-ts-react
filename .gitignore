@@ -2,3 +2,7 @@ node_modules/
 dist/
 coverage/
 *.log
+
+# local env — never commit
+.env.local
+.env*.local
