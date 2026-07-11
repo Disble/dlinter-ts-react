@@ -3,18 +3,29 @@
   "version": "0.1.0",
   "description": "Deterministic architecture governance for TypeScript + React projects: custom ESLint rules, architecture-concept presets, and pre-commit gate scaffolding.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Disble/dlinter-ts-react.git"
+  },
+  "homepage": "https://github.com/Disble/dlinter-ts-react#readme",
+  "bugs": {
+    "url": "https://github.com/Disble/dlinter-ts-react/issues"
+  },
   "type": "module",
   "packageManager": "bun@1.3.14",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     }
   },
   "bin": {
-    "dlinter": "./dist/cli/index.js"
+    "dlinter": "./dist/cli/index.mjs"
   },
   "files": [
     "dist"
@@ -24,7 +35,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "validate": "bun run typecheck && bun run test"
+    "validate": "bun run typecheck && bun run test",
+    "e2e:pack": "node ./scripts/pack-e2e.mjs",
+    "prepublishOnly": "bun run validate && bun run build"
   },
   "keywords": [
     "eslint",
