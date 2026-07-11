@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.3.0...dlinter-ts-react-v0.3.1) (2026-07-11)
+
+
+### Bug Fixes
+
+* **scripts:** support npm 12 object output in pack e2e gate ([48388f6](https://github.com/Disble/dlinter-ts-react/commit/48388f69886b833a1a85e170ad6aa0e1ecb0a409))
+
 ## [0.3.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.2.0...dlinter-ts-react-v0.3.0) (2026-07-11)
 
 
