@@ -134,12 +134,9 @@ The repo self-hosts its own gate (lefthook: fallow audit + typecheck + test). Co
 
 ### Releasing
 
-CI publishes to npm with provenance on version tags:
+Releases are automated with [release-please](https://github.com/googleapis/release-please): conventional commits on `main` drive the next semver (`fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major). The bot maintains a Release PR with the computed version and CHANGELOG; **merging that PR** cuts the GitHub release and publishes to npm with provenance — after the tarball end-to-end gate passes.
 
-```bash
-npm version minor          # bumps package.json + creates the tag
-git push --follow-tags     # CI: validate → build → tarball e2e → npm publish
-```
+Manual escape hatch: pushing a `v*` tag triggers the same publish pipeline directly.
 
 Requires the `NPM_TOKEN` secret in the repository settings.
 
