@@ -341,7 +341,8 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         'dlinter/readonly-props': 'error',
       },
     },
-    // Helpers own functions but never inline type declarations.
+    // Helpers own functions but never root-level constants/state (those
+    // belong in *.constants.ts) nor inline type declarations.
     {
       files: ['src/**/*.helpers.ts'],
       ignores: productionTestGlobs,
@@ -349,7 +350,10 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         dlinter: pluginBase,
       },
       rules: {
-        'dlinter/strict-colocation': ['error', { checks: ['inline-interface', 'inline-type-alias'] }],
+        'dlinter/strict-colocation': [
+          'error',
+          { checks: ['root-variable', 'inline-interface', 'inline-type-alias'] },
+        ],
       },
     },
     // Final reset: tests stay exempt no matter what earlier blocks enabled.

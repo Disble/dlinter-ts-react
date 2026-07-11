@@ -157,6 +157,42 @@ describe('recommended config', () => {
     expect(errorRuleIds(result)).toContain('dlinter/strict-colocation');
   });
 
+  it('flags root-level constants in helpers role files', async () => {
+    const result = await lintVirtualFile(
+      `
+        const EMPTY_BOARD = { rail: [], grid: [] };
+
+        /**
+         * Builds the default ordering board.
+         */
+        export function createOrderingBoard() {
+          return EMPTY_BOARD;
+        }
+      `,
+      'src/features/seasons/season-source.helpers.ts',
+    );
+
+    expect(errorRuleIds(result)).toContain('dlinter/strict-colocation');
+  });
+
+  it('keeps a compliant helpers role file green', async () => {
+    const result = await lintVirtualFile(
+      `
+        import { EMPTY_SEASON_LABEL } from './season.constants';
+
+        /**
+         * Formats the season label with the shared fallback.
+         */
+        export function formatSeasonLabel(label: string) {
+          return label.trim() || EMPTY_SEASON_LABEL;
+        }
+      `,
+      'src/features/seasons/season.helpers.ts',
+    );
+
+    expect(result?.errorCount).toBe(0);
+  });
+
   it('keeps a delivery main component exported via default specifier green', async () => {
     const result = await lintVirtualFile(
       `
