@@ -11,7 +11,7 @@
 | Package surface | `src/index.ts` (plugin + presets + `createRecommendedConfig`), `src/cli/index.ts` (`dlinter` bin) |
 | Layer contract | `src/index.ts → src/configs/ → src/plugin.ts → src/rules/` — one-way, machine-enforced |
 | Dev loop | `bun install` → `bun run validate` (typecheck + all tests) |
-| Release | conventional commits on `main` → release-please PR → merge = npm publish (OIDC, tokenless) |
+| Release | feature branch → PR (CI + Sonar on the real diff) → merge to `main` → release-please PR → merge = npm publish (OIDC, tokenless). `main` is protected — no direct pushes |
 | Methodology | **Strict TDD** — a rule without a failing test proving it fires is a disabled rule |
 | Self-governance | the package lints itself with its own rules on every commit (`src/__tests__/self-governance.test.ts`) |
 
@@ -24,6 +24,7 @@
 | Change any rule severity or add a plugin | [severity-policy.md](./severity-policy.md) — **read this BEFORE touching severities** | — |
 | Fix a failing `upstream-severity-drift` test after a dependency bump | [severity-policy.md § Plugin bump playbook](./severity-policy.md#plugin-bump-playbook) | — |
 | Write or debug tests | [testing.md](./testing.md) | — |
+| Understand CI, branch protection, or the release/Sonar flow | [release-and-ci.md](./release-and-ci.md) | — |
 
 ## Non-negotiables (the short list)
 
@@ -42,5 +43,6 @@
 | [severity-policy.md](./severity-policy.md) | The severity governance policy, the override ledger, drift guards, bump playbook |
 | [adding-a-rule.md](./adding-a-rule.md) | The growth recipe for new rules, step by step |
 | [testing.md](./testing.md) | The four test harnesses, what each can prove, and the gotchas |
+| [release-and-ci.md](./release-and-ci.md) | Feature-branch + PR workflow, `main` branch protection, CI, and CI-based SonarCloud analysis |
 
 Root-level references: [`README.md`](../README.md) (consumer-facing), [`AGENTS.md`](../AGENTS.md) (agent quick context), [`CLAUDE.md`](../CLAUDE.md) (Claude Code non-negotiables).

@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Sonar needs full history for accurate new-code and blame data.
+          fetch-depth: 0
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
@@ -21,11 +24,20 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Test
-        run: bun run test
+      - name: Test with coverage
+        run: bun run test:coverage
 
       - name: Build
         run: bun run build
 
       - name: Tarball end-to-end
         run: bun run e2e:pack
+
+      # Self-skips until SONAR_TOKEN exists, so this gate never blocks merges
+      # before you've wired the secret + disabled Automatic Analysis in SonarCloud.
+      - name: SonarQube Cloud scan
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io

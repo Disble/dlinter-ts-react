@@ -109,14 +109,16 @@ Presets are named after **architecture concepts** (`recommended`, `dumb-ui`), ne
 ```mermaid
 sequenceDiagram
     participant Dev
+    participant FB as feature branch
     participant Main as main branch
     participant RP as release-please
     participant NPM as npm registry
-    Dev->>Main: conventional commit passes the lefthook gate
+    Dev->>FB: conventional commits pass the lefthook gate
+    FB->>Main: PR merges after CI validate and Sonar pass
     Main->>RP: push triggers the workflow
     RP->>Main: opens or updates the Release PR
     Dev->>RP: merges the Release PR
     RP->>NPM: publish via OIDC trusted publishing after the tarball e2e gate
 ```
 
-`fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major. Publishing is tokenless (OIDC trusted publisher bound to `release-please.yml`).
+`main` is protected — code lands only through pull requests, never direct pushes. `fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major. Publishing is tokenless (OIDC trusted publisher bound to `release-please.yml`). Full detail: [release-and-ci.md](./release-and-ci.md).
