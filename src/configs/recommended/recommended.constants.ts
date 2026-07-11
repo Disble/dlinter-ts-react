@@ -55,8 +55,8 @@ export const sonarjsSurgicalOverrides: Linter.RulesRecord = {
   // no-nested-conditional (upstream's readability verdict stands, JSX
   // included).
   //
-  // TODO/FIXME comments are tracked work, not defects. Blocking commits on
-  // them teaches teams to delete the signal instead of paying the debt.
+  // Task-marker comments represent tracked work rather than defects. Blocking
+  // commits on them teaches teams to delete the signal rather than pay the debt.
   'sonarjs/fixme-tag': 'warn',
   'sonarjs/todo-tag': 'warn',
   // @typescript-eslint/no-unused-vars owns unused detection with the

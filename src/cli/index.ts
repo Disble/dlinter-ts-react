@@ -24,7 +24,10 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error: Error) => {
-  process.stderr.write(`dlinter failed: ${error.message}\n`);
+try {
+  await main();
+} catch (error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  process.stderr.write(`dlinter failed: ${message}\n`);
   process.exitCode = 1;
-});
+}

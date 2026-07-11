@@ -30,7 +30,7 @@ export const noInfrastructureInView: Rule.RuleModule = {
           },
           runtimeGlobals: {
             type: 'array',
-            items: { type: 'string', pattern: '^[A-Za-z_$][\\w$]*\\.[A-Za-z_$][\\w$]*$' },
+            items: { type: 'string', pattern: String.raw`^[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*$` },
           },
         },
         additionalProperties: false,
