@@ -20,7 +20,15 @@ function fail(message) {
 }
 
 const packOutput = JSON.parse(run('npm pack --json', packageRoot));
-const tarballPath = path.join(packageRoot, packOutput[0].filename);
+// npm <= 11 returns an array of pack entries; npm >= 12 keys them by package
+// name. Accept both so the gate survives the npm update in the publish job.
+const packEntry = Array.isArray(packOutput) ? packOutput[0] : Object.values(packOutput)[0];
+
+if (!packEntry?.filename) {
+  fail(`could not read the tarball filename from npm pack --json output: ${JSON.stringify(packOutput).slice(0, 200)}`);
+}
+
+const tarballPath = path.join(packageRoot, packEntry.filename);
 const consumerRoot = mkdtempSync(path.join(tmpdir(), 'dlinter-pack-e2e-'));
 
 try {
