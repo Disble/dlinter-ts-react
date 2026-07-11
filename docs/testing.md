@@ -4,11 +4,11 @@
 
 ```mermaid
 flowchart TD
-    Q{"What are you proving?"} -->|"a rule's AST logic"| RT["RuleTester<br/>src/rules/__tests__/"]
-    Q -->|"preset glob wiring + severities"| VH["virtual-file harness<br/>configs/__tests__/recommended.test.ts"]
-    Q -->|"type-checked rules"| TP["typed fixture project<br/>recommended-typed.test.ts"]
-    Q -->|"the repo obeys itself"| SG["self-governance<br/>src/__tests__/self-governance.test.ts"]
-    Q -->|"the shipped tarball works"| E2E["pack e2e<br/>scripts/pack-e2e.mjs"]
+    Q{"what are you proving?"} -->|rule AST logic| RT["RuleTester suites in src/rules/__tests__"]
+    Q -->|preset wiring and severities| VH["virtual-file harness in recommended.test.ts"]
+    Q -->|type-checked rules| TP["typed fixture project in recommended-typed.test.ts"]
+    Q -->|the repo obeys itself| SG["self-governance test"]
+    Q -->|the shipped tarball works| E2E["pack e2e script"]
 ```
 
 ## The harnesses
@@ -60,9 +60,9 @@ expect(warnIds).toContain('sonarjs/todo-tag');             // surgical downgrade
 
 ```mermaid
 flowchart LR
-    R["RED: write the failing test<br/>run it, SEE it fail"] --> G["GREEN: minimal implementation<br/>until the test passes"]
-    G --> V["bun run validate<br/>(typecheck + 94+ tests + self-governance)"]
-    V --> C["commit — lefthook gate re-runs<br/>fallow + typecheck + test"]
+    R["RED: write the failing test and see it fail"] --> G["GREEN: minimal implementation until it passes"]
+    G --> V["bun run validate"]
+    V --> C["commit: the lefthook gate re-runs every check"]
 ```
 
 A failure you never witnessed proves nothing: run the RED state before implementing. When a suite-wide change makes an existing green fixture fail, decide honestly — is the new verdict *correct* for real projects? Then fix the fixture (precedent: `no-empty-test-file`). Is it a misfire? Then it's a named surgical override with a reason ([severity-policy.md](./severity-policy.md)).

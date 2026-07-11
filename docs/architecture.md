@@ -6,16 +6,10 @@
 
 ```mermaid
 flowchart LR
-    A["src/index.ts<br/><i>entrypoint</i>"] --> B["src/configs/<br/><i>preset factories</i>"]
-    B --> C["src/plugin.ts<br/><i>rule registry</i>"]
-    C --> D["src/rules/<br/><i>9 rule modules</i>"]
-    E["src/cli/<br/><i>standalone bin</i>"]
-
-    style A fill:#e3f2ec,stroke:#0f9d78,color:#0d1512
-    style B fill:#e3f2ec,stroke:#0f9d78,color:#0d1512
-    style C fill:#e3f2ec,stroke:#0f9d78,color:#0d1512
-    style D fill:#e3f2ec,stroke:#0f9d78,color:#0d1512
-    style E fill:#f7ecda,stroke:#d68c2c,color:#0d1512
+    A["src/index.ts entrypoint"] --> B["src/configs preset factories"]
+    B --> C["src/plugin.ts rule registry"]
+    C --> D["src/rules 9 rule modules"]
+    E["src/cli standalone bin"]
 ```
 
 | Layer | Owns | May import | Must never import |
@@ -65,15 +59,21 @@ The preset assigns every file a **role by glob** (ESLint flat-config `files`/`ig
 
 ```mermaid
 flowchart LR
-    F["source file"] --> G{"glob → role"}
-    G -->|"src/**/*.tsx"| V["view: no-view-effects,<br/>readonly-props, colocation"]
-    G -->|"src/**/use-*.ts"| H["hook: hook-anatomy,<br/>colocation"]
-    G -->|"deliveryGlobs"| DL["delivery: composition-only"]
-    G -->|"**/index.ts"| B["barrel: pure-index-barrel"]
-    G -->|"*.helpers.ts / *.types.ts"| R["role contracts"]
-    G -->|"__tests__/**"| T["tests: architecture rules OFF<br/>(final reset block)"]
-    V & H & DL & B & R --> X["verdict at file:line —<br/>errors block the gate"]
+    F["source file"] --> G{"glob to role"}
+    G -->|views| V["no-view-effects, readonly-props, strict-colocation"]
+    G -->|hooks| H["hook-anatomy, strict-colocation"]
+    G -->|delivery| DL["composition-only-delivery"]
+    G -->|barrels| B["pure-index-barrel"]
+    G -->|role files| R["role contracts"]
+    G -->|tests| T["architecture rules OFF via the final reset block"]
+    V --> X["verdict: errors block the gate"]
+    H --> X
+    DL --> X
+    B --> X
+    R --> X
 ```
+
+Glob assignments: views are `src/**/*.tsx` outside `deliveryGlobs`; hooks are `src/**/use-*.ts`; barrels are `**/index.ts`; role files are `*.helpers.ts` / `*.types.ts` / `*.constants.ts`; tests are `productionTestGlobs`.
 
 **Block order matters**: `createRecommendedConfig` returns an ordered array; later blocks override earlier ones per rule. The final block is the test reset — tests stay exempt from architecture rules no matter what earlier blocks enabled. When adding a block, place it BEFORE the test reset unless it must apply to tests.
 
@@ -95,11 +95,11 @@ Every file has one role; when a module splits into role files, the whole unit mo
 
 ```mermaid
 flowchart TD
-    C["consumer eslint.config.js"] -->|"import dlinter"| I["dist/index.mjs"]
-    C2["npx dlinter init"] -->|"bin"| CLI["dist/cli/index.mjs"]
-    I --> P["...dlinter.configs.recommended<br/>or createRecommendedConfig(options)"]
-    CLI --> L["writes lefthook.yml<br/>(never overwrites)"]
-    P --> O["options: infrastructure edge,<br/>deliveryGlobs, tsconfigPath, reactCompiler"]
+    C["consumer eslint.config.js"] -->|import| I["dist/index.mjs"]
+    C2["npx dlinter init"] -->|bin| CLI["dist/cli/index.mjs"]
+    I --> P["dlinter.configs.recommended or createRecommendedConfig"]
+    CLI --> L["writes lefthook.yml and never overwrites"]
+    P --> O["options: infrastructure, deliveryGlobs, tsconfigPath, reactCompiler"]
 ```
 
 Presets are named after **architecture concepts** (`recommended`, `dumb-ui`), never after consuming projects. Project specifics (a Wails bridge, a tRPC client) enter as `createRecommendedConfig` **options**, not new presets.
@@ -112,11 +112,11 @@ sequenceDiagram
     participant Main as main branch
     participant RP as release-please
     participant NPM as npm registry
-    Dev->>Main: conventional commit (lefthook gate: fallow + typecheck + test)
-    Main->>RP: push triggers workflow
-    RP->>Main: opens/updates Release PR (version + CHANGELOG)
-    Dev->>RP: merges Release PR
-    RP->>NPM: publish via trusted publishing (OIDC) after tarball e2e gate
+    Dev->>Main: conventional commit passes the lefthook gate
+    Main->>RP: push triggers the workflow
+    RP->>Main: opens or updates the Release PR
+    Dev->>RP: merges the Release PR
+    RP->>NPM: publish via OIDC trusted publishing after the tarball e2e gate
 ```
 
 `fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major. Publishing is tokenless (OIDC trusted publisher bound to `release-please.yml`).

@@ -12,14 +12,16 @@
 
 ```mermaid
 flowchart TD
-    S["Rule ships at ERROR upstream"] --> Q1{"Does another rule in this stack<br/>OWN the same contract?"}
-    Q1 -->|yes| OFF["off — name the owner in the comment<br/>(e.g. sonarjs/no-unused-vars →<br/>@typescript-eslint owns it)"]
-    Q1 -->|no| Q2{"Is the finding a true non-defect<br/>in a TS+React frontend?"}
-    Q2 -->|yes| WARN["warn — document why<br/>(e.g. todo-tag: tracked work)"]
-    Q2 -->|no| Q3{"Does it misfire ONLY in a specific<br/>context (tests, no React Compiler)?"}
-    Q3 -->|yes| SCOPE["scope-limited override or option-gate<br/>(test-only off / reactCompiler option)"]
-    Q3 -->|no| KEEP["KEEP upstream error.<br/>'It's a heuristic' or 'awkward in JSX'<br/>do NOT qualify."]
+    S["rule ships at ERROR upstream"] --> Q1{"another rule owns the same contract?"}
+    Q1 -->|yes| OFF["off and name the owner in the comment"]
+    Q1 -->|no| Q2{"true non-defect for a TS React frontend?"}
+    Q2 -->|yes| WARN["warn and document why"]
+    Q2 -->|no| Q3{"misfires only in a specific context?"}
+    Q3 -->|yes| SCOPE["scope-limited override or option gate"]
+    Q3 -->|no| KEEP["KEEP upstream error"]
 ```
+
+Examples: `sonarjs/no-unused-vars` is off because `@typescript-eslint` owns the contract; `todo-tag` warns because tracked work is not a defect; the fake-credential rules are off in tests only; `react-compiler-no-manual-memoization` is gated behind the `reactCompiler` option. "It is a heuristic" and "awkward in JSX" do **not** qualify as reasons.
 
 **What does NOT justify a downgrade** (rejected in review, recorded here so it stays rejected):
 - "It's a threshold heuristic" — `cognitive-complexity` stays at upstream `error`; it keeps the ESLint gate aligned with the Fallow audit.
@@ -66,10 +68,10 @@ Everything else in sonarjs stays ON in tests — `no-exclusive-tests`, `no-skipp
 
 ```mermaid
 flowchart LR
-    P["plugin pinned EXACT<br/>in package.json"] --> D["drift test compares runtime<br/>error-set to JSON contract"]
+    P["exact version pin in package.json"] --> D["drift test compares runtime error-set to the JSON contract"]
     D -->|match| CI["CI green"]
-    D -->|mismatch| F["CI RED → forced re-triage"]
-    F --> RT["update surgical overrides<br/>+ regenerate contract JSON"]
+    D -->|mismatch| F["CI red forces a re-triage"]
+    F --> RT["update overrides and regenerate the contract JSON"]
 ```
 
 | Piece | Location |
