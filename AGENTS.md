@@ -53,6 +53,16 @@ Detailed documentation (architecture diagrams, severity-policy ledger + plugin-b
 | scope a monorepo | `--workspace <glob> / --changed-workspaces <ref>` (global flags, prefix any command) |
 <!-- generated:task-matrix:end -->
 
+## Project Skills
+
+Skills live in `.claude/skills/` (Claude Code) and are mirrored in `.agents/skills/` (other agent frameworks). Load the matching skill BEFORE performing the operation:
+
+| Skill | Trigger |
+|-------|---------|
+| `add-lint-rule` | Adding or extending a `dlinter/*` rule — TDD recipe, layer rules, preset wiring |
+| `severity-triage` | Changing bundled-plugin severities, adding a plugin, or a failing `upstream-severity-drift` test |
+| `preset-testing` | Writing/debugging preset or rule tests — harness selection and known traps |
+
 ## Agent Rules
 
 - Do not edit: `dist/**` (build output), `src/rules/__tests__/__fixtures__/**` semantics (fixtures encode rule contracts — changing them changes what a test proves).
