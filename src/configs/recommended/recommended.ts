@@ -11,7 +11,6 @@ import sonarjsPlugin from 'eslint-plugin-sonarjs';
 import type { Linter } from 'eslint';
 
 import { pluginBase } from '../../plugin.js';
-import { downgradeRuleSeverities } from '../severities.js';
 import {
   allDlinterRulesOff,
   documentationContexts,
@@ -20,8 +19,14 @@ import {
   importXExtensions,
   nodeScriptGlobs,
   productionTestGlobs,
+  reactDoctorSurgicalOverrides,
+  sonarjsRecommendedRules,
+  sonarjsSurgicalOverrides,
+  sonarjsTestContextOverrides,
   sourceBrowserGlobs,
   typescriptPlugin,
+  typescriptRecommendedRules,
+  typescriptTypeCheckedOnlyRules,
 } from './recommended.constants.js';
 import type { RecommendedConfigOptions } from './recommended.types.js';
 
@@ -44,7 +49,6 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         },
       ]
     : 'off';
-  const reactDoctorWarnRules = downgradeRuleSeverities(reactDoctor.configs.recommended.rules);
 
   return [
     js.configs.recommended as Linter.Config,
@@ -88,6 +92,9 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         ],
       },
       rules: {
+        // Surgical offs for the LEGACY `import/` namespace: import-x owns
+        // import analysis here; consumers whose configs still load
+        // eslint-plugin-import would double-report every finding otherwise.
         'import/default': 'off',
         'import/export': 'off',
         'import/named': 'off',
@@ -96,15 +103,17 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         'import/no-named-as-default': 'off',
         'import/no-named-as-default-member': 'off',
         'import/no-unresolved': 'off',
+        // Core no-redeclare false-positives on TypeScript function overloads
+        // and declaration merging; TS itself owns redeclaration semantics.
         'no-redeclare': 'off',
         'import-x/no-cycle': ['error', { maxDepth: 1 }],
         'import-x/no-duplicates': 'error',
         'import-x/no-unresolved': 'error',
-        'sonarjs/cognitive-complexity': ['warn', 15],
-        'sonarjs/no-all-duplicated-branches': 'warn',
-        'sonarjs/no-identical-functions': 'warn',
-        'sonarjs/no-redundant-boolean': 'warn',
-        'sonarjs/no-small-switch': 'warn',
+        // sonarjs respects the plugin's OWN triage (206 error / 62 off
+        // upstream) — spread as-is; only the named rules in
+        // sonarjsSurgicalOverrides are re-tuned, each with a documented reason.
+        ...sonarjsRecommendedRules,
+        ...sonarjsSurgicalOverrides,
       },
     },
     {
@@ -123,16 +132,45 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         '@typescript-eslint': typescriptPlugin,
       },
       rules: {
+        // @typescript-eslint's recommended tier, upstream severities as-is
+        // (20 definite-bug rules at "error": no-explicit-any, no-misused-new,
+        // no-unsafe-function-type, …). Locked by the severity drift test.
+        ...typescriptRecommendedRules,
         'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
         // TypeScript owns undefined-symbol detection (tsc); ESLint's no-undef
         // only produces false positives on TS DOM/type-namespace globals.
         // Consumers keep a typecheck job in the gate — it is load-bearing.
         'no-undef': 'off',
         'no-unused-vars': 'off',
+        // Options-tune, not a severity change: upstream keeps this at "error";
+        // we add the underscore-ignore convention for intentionally unused
+        // parameters and caught errors.
         '@typescript-eslint/no-unused-vars': [
           'error',
           { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
         ],
+      },
+    },
+    // The type-checked tier: the highest-value bug rules a real TypeScript
+    // program unlocks (no-floating-promises, no-misused-promises,
+    // await-thenable, the no-unsafe-* family). Upstream ships them at "error"
+    // and the preset respects that triage. They need type information, so the
+    // project service resolves each file's nearest tsconfig — the consumer's
+    // tsconfig must cover src/. Tests stay exempt: mock-assertion patterns
+    // (e.g. expect(instance.method)) are documented unbound-method misfires.
+    {
+      files: ['src/**/*.{ts,tsx}'],
+      ignores: productionTestGlobs,
+      languageOptions: {
+        parserOptions: {
+          projectService: true,
+        },
+      },
+      plugins: {
+        '@typescript-eslint': typescriptPlugin,
+      },
+      rules: {
+        ...typescriptTypeCheckedOnlyRules,
       },
     },
     // Tests describe behavior, not production shape: mocks may keep unused params.
@@ -153,7 +191,14 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         'react-hooks': reactHooksPlugin,
       },
       rules: {
+        // Zero false positives, and a violation corrupts React's hook order
+        // at runtime. Definitely-wrong → blocks the gate.
         'react-hooks/rules-of-hooks': 'error',
+        // Deliberately advisory: the rule has documented false-positive
+        // patterns (intentional mount-only effects, stable refs) where its
+        // suggested "fix" introduces infinite render loops. An error here
+        // forces worse code or disable-comments — both cost more than a
+        // warning developers actually read.
         'react-hooks/exhaustive-deps': 'warn',
       },
     },
@@ -168,7 +213,13 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         'dlinter/strict-colocation': 'error',
       },
     },
-    // Advisory react-doctor findings surface as warnings, never gate failures.
+    // react-doctor respects the plugin's OWN per-rule triage (34 error / 198
+    // warn upstream) — definite bugs and a11y failures block, heuristics warn.
+    // We never blanket-downgrade; only the named rules in
+    // reactDoctorSurgicalOverrides are re-tuned, each with a documented reason.
+    // With `reactCompiler: true` the no-manual-memoization override is lifted:
+    // the rule returns at its upstream severity, because under the compiler
+    // manual useMemo/useCallback is redundant noise, not load-bearing code.
     {
       files: ['src/**/*.{ts,tsx}'],
       ignores: productionTestGlobs,
@@ -176,10 +227,16 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         'react-doctor': reactDoctor,
       },
       rules: {
-        ...reactDoctorWarnRules,
-        // Requires React Compiler to be configured in the consumer project;
-        // without it, manual memoization is still load-bearing.
-        'react-doctor/react-compiler-no-manual-memoization': 'off',
+        ...reactDoctor.configs.recommended.rules,
+        ...reactDoctorSurgicalOverrides,
+        ...(options.reactCompiler
+          ? {
+              'react-doctor/react-compiler-no-manual-memoization':
+                (reactDoctor.configs.recommended.rules as Linter.RulesRecord)[
+                  'react-doctor/react-compiler-no-manual-memoization'
+                ] ?? 'warn',
+            }
+          : {}),
       },
     },
     {
@@ -325,6 +382,9 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
       },
     },
     // Final reset: tests stay exempt no matter what earlier blocks enabled.
+    // sonarjs is NOT swept here — only the named rules that misfire on test
+    // fixtures (fake credentials) go quiet; no-exclusive-tests and the other
+    // test-focused sonarjs rules keep working where they matter most.
     {
       files: productionTestGlobs,
       plugins: {
@@ -334,6 +394,7 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
       rules: {
         ...allDlinterRulesOff,
         'jsdoc/require-jsdoc': 'off',
+        ...sonarjsTestContextOverrides,
       },
     },
   ];

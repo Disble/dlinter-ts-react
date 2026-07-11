@@ -20,4 +20,12 @@ export interface RecommendedConfigOptions {
   readonly deliveryGlobs?: readonly string[];
   /** tsconfig used by the import resolver. Default: `./tsconfig.json`. */
   readonly tsconfigPath?: string;
+  /**
+   * The project compiles with React Compiler. Activates
+   * `react-doctor/react-compiler-no-manual-memoization` at its upstream
+   * severity (manual `useMemo`/`useCallback` become redundant noise once the
+   * compiler memoizes). Default `false`: without the compiler, manual
+   * memoization is load-bearing and the rule would only mislead.
+   */
+  readonly reactCompiler?: boolean;
 }

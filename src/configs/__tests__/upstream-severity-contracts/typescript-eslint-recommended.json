@@ -1,0 +1,22 @@
+[
+  "@typescript-eslint/ban-ts-comment",
+  "@typescript-eslint/no-array-constructor",
+  "@typescript-eslint/no-duplicate-enum-values",
+  "@typescript-eslint/no-empty-object-type",
+  "@typescript-eslint/no-explicit-any",
+  "@typescript-eslint/no-extra-non-null-assertion",
+  "@typescript-eslint/no-misused-new",
+  "@typescript-eslint/no-namespace",
+  "@typescript-eslint/no-non-null-asserted-optional-chain",
+  "@typescript-eslint/no-require-imports",
+  "@typescript-eslint/no-this-alias",
+  "@typescript-eslint/no-unnecessary-type-constraint",
+  "@typescript-eslint/no-unsafe-declaration-merging",
+  "@typescript-eslint/no-unsafe-function-type",
+  "@typescript-eslint/no-unused-expressions",
+  "@typescript-eslint/no-unused-vars",
+  "@typescript-eslint/no-wrapper-object-types",
+  "@typescript-eslint/prefer-as-const",
+  "@typescript-eslint/prefer-namespace-keyword",
+  "@typescript-eslint/triple-slash-reference"
+]

@@ -79,6 +79,7 @@ export default createRecommendedConfig({
 | `infrastructure` | `undefined` (rule off) | Import patterns + runtime globals that views must never touch directly |
 | `deliveryGlobs` | `['src/App.tsx', 'src/app/**/*.{ts,tsx}']` | Which files form the composition-only delivery layer |
 | `tsconfigPath` | `./tsconfig.json` | tsconfig used by the import resolver |
+| `reactCompiler` | `false` | Project compiles with React Compiler → `react-doctor/react-compiler-no-manual-memoization` activates at its upstream severity (manual memoization becomes redundant noise). Without the compiler it stays off — manual memoization is load-bearing |
 
 Presets are named after **architecture concepts** (`recommended`, `dumb-ui`), never after projects. Your project's specifics are options, not preset names.
 
@@ -90,9 +91,18 @@ Beyond the `dlinter/` rules, the preset composes the bundled ecosystem with prov
 - **`import-x`**: cycle detection (`no-cycle`), duplicate imports, TypeScript-aware resolution.
 - **`jsdoc/require-jsdoc`** on every exported function, interface, and type alias.
 - **`check-file`**: tests belong in `__tests__/`, feature folders are kebab-case, `utils.ts` is banned (name the role: `*.helpers.ts`).
-- **`sonarjs` + `react-doctor` as warnings** — advisory signal, never gate failures.
 - **`max-lines`**: 500 effective lines, hard error.
-- **`react-hooks`**: `rules-of-hooks` stays an error; nothing else replaces that safety net.
+- **`react-hooks`**: `rules-of-hooks` blocks (zero false positives; violations corrupt React's hook order at runtime). `exhaustive-deps` is deliberately advisory — its documented false-positive patterns would force worse code or disable-comments at `error`.
+
+### Upstream severities are respected, never blanket-downgraded
+
+Every bundled plugin whose recommended config the preset spreads keeps **its own author's per-rule triage** — that triage is exactly the work this package does for you, and sweeping a whole ruleset to `warn` would throw it away. Only *named* rules are re-tuned, each with a documented reason in the source:
+
+- **`@typescript-eslint`** — the recommended tier (20 definite-bug rules at `error`: `no-explicit-any`, `no-misused-new`, `no-unsafe-function-type`, …) applies to all TypeScript. The **type-checked tier** (`no-floating-promises`, `no-misused-promises`, `await-thenable`, the `no-unsafe-*` family) runs on production `src/**` through the TypeScript project service — **your tsconfig must cover `src/`**. Tests are exempt (mock-assertion patterns are documented `unbound-method` misfires).
+- **`sonarjs`** — upstream ships 206 bug and security rules at `error` and they block as-is, including `cognitive-complexity`, `no-identical-functions`, and `no-nested-conditional` (kept at `error` so the ESLint gate and a Fallow audit agree on one standard) and `prefer-read-only-props` (kept for SonarQube Cloud parity — it coexists with `dlinter/readonly-props`, which additionally governs `*.types.ts` contracts and needs no type information). Surgical exceptions, each with a reason: `todo-tag`/`fixme-tag` warn instead of blocking tracked work, `pseudo-random` warns (Math.random is legitimate for non-crypto frontend uses), `no-unused-vars` is off because `@typescript-eslint` owns that contract with the underscore convention. In test files only the fake-credential rules go quiet — mirroring SonarQube Cloud's reduced test-file profile — while `no-exclusive-tests` keeps guarding your suite.
+- **`react-doctor`** — 34 upstream `error` rules block (definite bugs and a11y: `jsx-key`, `no-direct-mutation-state`, `require-render-return`, `alt-text`, the `aria-*` set…); ~198 heuristics stay warnings. Sole override: `react-compiler-no-manual-memoization` is off by default and returns at upstream severity via `createRecommendedConfig({ reactCompiler: true })`.
+
+Each spread plugin is **pinned to an exact version**, and a drift test locks its upstream error-set (`src/configs/__tests__/upstream-severity-contracts/`) — a bump that changes the set fails CI and forces a deliberate re-triage, never silent drift.
 
 ## CLI
 
@@ -110,12 +120,15 @@ Scaffolds `lefthook.yml` with a lint + typecheck + test pre-commit gate. Never o
 | `typescript` | `>=5.0.0 <6.1.0` — TypeScript 7 (native) is not yet supported by `@typescript-eslint`; the ceiling moves when the ecosystem does |
 | `node` | `>=20.19.0` |
 
+The type-checked rule tier builds a real TypeScript program via the project service: every file under `src/` must be covered by a `tsconfig.json` (the nearest one to each file wins). A standard `"include": ["src"]` already satisfies this.
+
 ## Design principles
 
 | Principle | In practice |
 |-----------|-------------|
 | First-class rules, never selector catalogs | `no-restricted-syntax` is a single rule slot consumers can silently override; every constraint here has its own rule ID, its own docs, and per-rule disable |
 | Don't reinvent the wheel | Existing plugins are bundled wheels (`max-lines`, `check-file`, `import-x`, …). Custom rules exist only for contracts no plugin ships — e.g. conditional folder ownership, pure-barrel enforcement |
+| Respect upstream triage, never blanket-downgrade | A bundled plugin's own per-rule severities are the plugin author's triage — honored as-is. Only specific rule IDs are re-tuned, each with a documented reason; a drift test locks the upstream error-set so a version bump forces a deliberate re-triage instead of silent drift. Bulk-demoting a whole ruleset is the exact config archaeology this package exists to spare consumers |
 | Tests are the proof | Every rule is TDD-built with RED/GREEN `RuleTester` cases; presets are tested through a real `ESLint` instance; releases are gated by installing the actual tarball into a fresh consumer project |
 | Validated against production | The full preset reproduces the source system's lint verdicts at exact file:line parity (30/30) on the codebase it was extracted from |
 

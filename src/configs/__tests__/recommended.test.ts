@@ -3,16 +3,16 @@ import type { Linter } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
 import { createRecommendedConfig } from '../recommended/index.js';
+import { typescriptTypeCheckedOnlyRules } from '../recommended/recommended.constants.js';
 
-const recommendedForWailsLikeProject: Linter.Config[] = [
-  ...createRecommendedConfig({
-    infrastructure: {
-      importPatterns: ['(^|/)wailsjs(/|$)'],
-      runtimeGlobals: ['window.go'],
-    },
-  }),
-  // Virtual fixtures import modules that do not exist on disk. Module
-  // resolution belongs to the consumer project; this suite tests policy.
+// Harness suffix shared by every config variant in this suite:
+// - Virtual fixtures import modules that do not exist on disk. Module
+//   resolution belongs to the consumer project; this suite tests policy.
+// - Virtual files exist only in memory — no TypeScript program can include
+//   them, so the type-checked tier cannot run here. It is covered against a
+//   real fixture project in recommended-typed.test.ts; every other severity
+//   decision is exercised here unchanged.
+const virtualHarnessOverrides: Linter.Config[] = [
   {
     rules: {
       'import-x/no-unresolved': 'off',
@@ -23,6 +23,26 @@ const recommendedForWailsLikeProject: Linter.Config[] = [
       react: { version: '19.2' },
     },
   },
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+      },
+    },
+    rules: Object.fromEntries(
+      Object.keys(typescriptTypeCheckedOnlyRules).map((ruleId) => [ruleId, 'off']),
+    ) as Linter.RulesRecord,
+  },
+];
+
+const recommendedForWailsLikeProject: Linter.Config[] = [
+  ...createRecommendedConfig({
+    infrastructure: {
+      importPatterns: ['(^|/)wailsjs(/|$)'],
+      runtimeGlobals: ['window.go'],
+    },
+  }),
+  ...virtualHarnessOverrides,
 ];
 
 function createEslint(): ESLint {
@@ -258,8 +278,15 @@ describe('recommended config', () => {
   });
 
   it('leaves test files outside the architecture contract', async () => {
+    // A realistic test file: root-level fixture const, inline interface, and
+    // an undocumented exported helper — all architecture violations elsewhere,
+    // all exempt here. It contains a real test case because sonarjs'
+    // no-empty-test-file stays ON in tests (an empty test file is a silently
+    // dead test, not a shape concern).
     const result = await lintVirtualFile(
       `
+        import { describe, expect, it } from 'vitest';
+
         const fixtures = ['nineties'];
 
         interface HarnessShape {
@@ -269,6 +296,12 @@ describe('recommended config', () => {
         export function renderHarness(): HarnessShape {
           return { label: fixtures[0] ?? '' };
         }
+
+        describe('clock harness', () => {
+          it('renders the harness label', () => {
+            expect(renderHarness().label).toBe('nineties');
+          });
+        });
       `,
       'src/features/clock/__tests__/Clock.test.tsx',
     );
@@ -309,5 +342,137 @@ describe('recommended config', () => {
     );
 
     expect(result?.errorCount).toBe(0);
+  });
+});
+
+describe('recommended config — react-doctor severity policy', () => {
+  it('surfaces an upstream-error react-doctor rule as an error, not a downgraded warning', async () => {
+    const result = await lintVirtualFile(
+      `
+        /**
+         * Renders the brand logo.
+         */
+        export function BrandLogo({ src }: Readonly<BrandLogoProps>) {
+          return <img alt="brand" src={src} src={src} />;
+        }
+      `,
+      'src/features/brand/BrandLogo.tsx',
+    );
+
+    // jsx-no-duplicate-props is a definite bug and ships at "error" upstream;
+    // the old blanket downgrade demoted it to a warning that never blocks.
+    expect(errorRuleIds(result)).toContain('react-doctor/jsx-no-duplicate-props');
+  });
+});
+
+describe('recommended config — sonarjs severity policy', () => {
+  it('surfaces an upstream-error sonarjs bug rule as an error', async () => {
+    const result = await lintVirtualFile(
+      `
+        /**
+         * Picks the season label variant.
+         */
+        export function pickSeasonVariant(flag: boolean) {
+          if (flag) {
+            return 'season';
+          } else {
+            return 'season';
+          }
+        }
+      `,
+      'src/features/seasons/season.helpers.ts',
+    );
+
+    // Identical if/else branches are a definite copy-paste bug. Upstream ships
+    // no-all-duplicated-branches at "error" — and this exact rule was one of
+    // the five the old preset blanket-downgraded to warn. Respecting the
+    // plugin's own triage means it blocks now.
+    expect(errorRuleIds(result)).toContain('sonarjs/no-all-duplicated-branches');
+  });
+
+  it('keeps todo-tag advisory through a surgical override, never blocking', async () => {
+    const result = await lintVirtualFile(
+      `
+        // TODO: swap the fallback once the season API ships pagination.
+
+        /**
+         * Formats the season label.
+         */
+        export function formatSeasonLabel(label: string) {
+          return label.trim();
+        }
+      `,
+      'src/features/seasons/season.helpers.ts',
+    );
+
+    const warningRuleIds = (result?.messages ?? [])
+      .filter((message) => message.severity === 1)
+      .map((message) => message.ruleId ?? '');
+
+    // TODO comments are tracked work, not defects. Upstream ships todo-tag at
+    // "error"; the preset downgrades this ONE named rule with a documented
+    // reason — the surgical exception that proves severities are triaged, not
+    // swept.
+    expect(warningRuleIds).toContain('sonarjs/todo-tag');
+    expect(errorRuleIds(result)).not.toContain('sonarjs/todo-tag');
+  });
+});
+
+describe('recommended config — react compiler option', () => {
+  const memoizingHook = `
+    import { useMemo } from 'react';
+
+    /**
+     * Provides the formatted season label.
+     */
+    export function useSeasonLabel() {
+      const label = useMemo(() => 'season', []);
+      return { label };
+    }
+  `;
+
+  async function lintHookWithReactCompiler(reactCompiler: boolean) {
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: [...createRecommendedConfig({ reactCompiler }), ...virtualHarnessOverrides],
+    });
+    const [result] = await eslint.lintText(memoizingHook, {
+      filePath: 'src/features/seasons/use-season-label.ts',
+    });
+    return result;
+  }
+
+  it('activates no-manual-memoization when the project compiles with React Compiler', async () => {
+    const result = await lintHookWithReactCompiler(true);
+    const firedRuleIds = (result?.messages ?? []).map((message) => message.ruleId ?? '');
+
+    // With the compiler, manual useMemo/useCallback is redundant noise — the
+    // upstream rule exists exactly for this and must come back to life.
+    expect(firedRuleIds).toContain('react-doctor/react-compiler-no-manual-memoization');
+  });
+
+  it('keeps no-manual-memoization off without the compiler (manual memoization is load-bearing)', async () => {
+    const result = await lintHookWithReactCompiler(false);
+    const firedRuleIds = (result?.messages ?? []).map((message) => message.ruleId ?? '');
+
+    expect(firedRuleIds).not.toContain('react-doctor/react-compiler-no-manual-memoization');
+  });
+});
+
+describe('recommended config — @typescript-eslint severity policy', () => {
+  it('surfaces upstream-error typescript-eslint rules as errors', async () => {
+    const result = await lintVirtualFile(
+      `
+        /**
+         * Formats an arbitrary payload for display.
+         */
+        export function formatPayload(payload: any) {
+          return String(payload);
+        }
+      `,
+      'src/features/seasons/format-payload.ts',
+    );
+
+    expect(errorRuleIds(result)).toContain('@typescript-eslint/no-explicit-any');
   });
 });
