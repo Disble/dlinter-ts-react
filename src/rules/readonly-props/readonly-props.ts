@@ -1,7 +1,6 @@
 import type { Rule } from 'eslint';
 
-const propsBoundary =
-  '[typeAnnotation.typeAnnotation.type="TSTypeReference"][typeAnnotation.typeAnnotation.typeName.name=/Props$/]';
+import { propsBoundary } from './readonly-props.constants.js';
 
 /**
  * Type Contract Rule: component props are immutable. Parameters use

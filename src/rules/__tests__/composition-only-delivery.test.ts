@@ -2,7 +2,7 @@ import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
 import { describe, it } from 'vitest';
 
-import { compositionOnlyDelivery } from '../composition-only-delivery.js';
+import { compositionOnlyDelivery } from '../composition-only-delivery/index.js';
 
 RuleTester.describe = describe;
 RuleTester.it = it;

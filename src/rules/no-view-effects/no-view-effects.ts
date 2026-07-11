@@ -1,6 +1,6 @@
 import type { Rule } from 'eslint';
 
-const effectHookPattern = /^use(?:Effect|LayoutEffect)$/u;
+import { effectHookPattern } from './no-view-effects.constants.js';
 
 /**
  * Dumb UI Rule: view components (.tsx) must stay presentational. Side effects

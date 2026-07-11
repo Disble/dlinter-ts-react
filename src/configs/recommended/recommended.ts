@@ -1,5 +1,4 @@
 import js from '@eslint/js';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import checkFilePlugin from 'eslint-plugin-check-file';
@@ -9,53 +8,22 @@ import reactPlugin from 'eslint-plugin-react';
 import reactDoctor from 'eslint-plugin-react-doctor';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import sonarjsPlugin from 'eslint-plugin-sonarjs';
-import type { ESLint, Linter } from 'eslint';
+import type { Linter } from 'eslint';
 
-import { pluginBase } from '../plugin.js';
+import { pluginBase } from '../../plugin.js';
+import { downgradeRuleSeverities } from '../severities.js';
+import {
+  allDlinterRulesOff,
+  documentationContexts,
+  documentationExemptGlobs,
+  governedMainModuleExemptGlobs,
+  importXExtensions,
+  nodeScriptGlobs,
+  productionTestGlobs,
+  sourceBrowserGlobs,
+  typescriptPlugin,
+} from './recommended.constants.js';
 import type { RecommendedConfigOptions } from './recommended.types.js';
-import { downgradeRuleSeverities } from './severities.js';
-
-// The @typescript-eslint plugin object types its rules more richly than
-// core ESLint's Plugin contract; the runtime shape is compatible.
-const typescriptPlugin = tsPlugin as unknown as ESLint.Plugin;
-
-const importXExtensions = ['.js', '.jsx', '.ts', '.tsx', '.d.ts'];
-const productionTestGlobs = [
-  '**/__tests__/**/*.{ts,tsx}',
-  '**/*.test.{ts,tsx}',
-  'src/test/**/*.{ts,tsx}',
-  'test/**/*.{ts,tsx}',
-];
-const nodeScriptGlobs = ['scripts/**/*.{js,mjs,cjs}'];
-const sourceBrowserGlobs = ['src/**/*.{ts,tsx,js,jsx}'];
-const documentationExemptGlobs = [...productionTestGlobs, '**/*.invalid.{ts,tsx,js,jsx}'];
-const governedMainModuleExemptGlobs = [
-  ...documentationExemptGlobs,
-  '**/index.ts',
-  '**/*.constants.ts',
-  '**/*.helpers.ts',
-  '**/*.schema.ts',
-  '**/*.types.ts',
-];
-const documentationContexts = [
-  'ExportNamedDeclaration > FunctionDeclaration',
-  'ExportNamedDeclaration > TSInterfaceDeclaration',
-  'ExportNamedDeclaration > TSTypeAliasDeclaration',
-  'ExportDefaultDeclaration > FunctionDeclaration',
-  'ExportDefaultDeclaration > ArrowFunctionExpression',
-  'ExportDefaultDeclaration > CallExpression > ArrowFunctionExpression',
-];
-const allDlinterRulesOff: Linter.RulesRecord = {
-  'dlinter/composition-only-delivery': 'off',
-  'dlinter/folder-ownership': 'off',
-  'dlinter/hook-anatomy': 'off',
-  'dlinter/no-infrastructure-in-view': 'off',
-  'dlinter/no-view-effects': 'off',
-  'dlinter/pure-index-barrel': 'off',
-  'dlinter/readonly-props': 'off',
-  'dlinter/require-exported-variable-jsdoc': 'off',
-  'dlinter/strict-colocation': 'off',
-};
 
 /**
  * Builds the full governance preset: bundled third-party plugin stack plus

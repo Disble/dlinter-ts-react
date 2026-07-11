@@ -2,7 +2,7 @@ import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
 import { describe, it } from 'vitest';
 
-import { noViewEffects } from '../no-view-effects.js';
+import { noViewEffects } from '../no-view-effects/index.js';
 
 RuleTester.describe = describe;
 RuleTester.it = it;

@@ -1,6 +1,6 @@
 import type { Rule } from 'eslint';
 
-const hookBlock = 'ExportNamedDeclaration > FunctionDeclaration[id.name=/^use[A-Z0-9]/] > BlockStatement';
+import { hookBlock } from './hook-anatomy.constants.js';
 
 /**
  * Hook Anatomy Rule: exported hooks follow one ordering — derived state

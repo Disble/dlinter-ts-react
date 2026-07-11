@@ -6,12 +6,14 @@ This file gives coding agents project-specific context. Keep it short and update
 
 - Primary app or package: `dlinter-ts-react` — an npm package shipping deterministic architecture governance for TS + React projects: custom ESLint rules, architecture-concept presets, and a CLI that scaffolds the pre-commit gate.
 - Main entry points: `src/index.ts` (plugin + configs + `createRecommendedConfig`), `src/cli/index.ts` (`dlinter` bin).
-- Important directories: `src/rules/` (one file per rule + `__tests__/`), `src/configs/` (preset factories), `src/cli/` (scaffolder).
+- Important directories: `src/rules/` (folder-owned rule modules + `__tests__/`), `src/configs/` (preset factories), `src/cli/` (scaffolder).
 
 ## Architecture Notes
 
-- Module boundaries: `src/plugin.ts` holds the shared plugin core; config factories receive it as a parameter — never import `src/index.ts` from a config (module cycle).
-- Rules are plain `Rule.RuleModule` objects; esquery selector strings are used directly as visitor keys.
+- Layer contract (ENFORCED by `src/__tests__/self-governance.test.ts` via `no-restricted-imports`, not just prose): import direction is one-way — `src/index.ts` → `src/configs/` → `src/plugin.ts` → `src/rules/`. `src/cli/` is a standalone bin entry that never touches the plugin side. Configs consume the rule registry through `pluginBase`, never by importing rules or the entrypoint back.
+- Self-governance: the repo lints itself with the universal subset of its own rules (strict-colocation, folder-ownership, pure-index-barrel, require-exported-variable-jsdoc, jsdoc/require-jsdoc, max-lines 500) inside `bun run validate`. Documented exceptions: `exported-const` check is off (the ESLint contract requires rule modules to be exported const objects), and `src/index.ts` + `src/cli/index.ts` are package entrypoints, not barrels.
+- Adding a rule (growth recipe): create `src/rules/<rule-name>/` with `<rule-name>.ts`, role files as needed (`*.constants.ts`, `*.helpers.ts`, `*.types.ts`), and a pure `index.ts`; register it in `src/plugin.ts`; RED-first `RuleTester` test in `src/rules/__tests__/`. Misplaced declarations fail the self-governance gate automatically.
+- Rules are plain `Rule.RuleModule` objects; esquery selector strings are used directly as visitor keys. `strict-colocation` builds its visitor from a per-check fragment registry in its `.helpers.ts` — add checks as registry entries, never as new branches in `create()`.
 - Presets are named after architecture CONCEPTS (`dumb-ui`, `recommended`), never after consuming projects. Project specifics (e.g. Wails) are rule OPTIONS.
 - Don't reinvent the wheel: before writing a custom rule, survey existing ESLint plugins (see README design table). Custom rules exist only for contracts no plugin ships.
 - TypeScript peer ceiling is `<6.1.0` — `@typescript-eslint` does not support TS 7 yet.

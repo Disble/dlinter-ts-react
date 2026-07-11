@@ -6,7 +6,7 @@ import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
 import { describe, it } from 'vitest';
 
-import { folderOwnership } from '../folder-ownership.js';
+import { folderOwnership } from '../folder-ownership/index.js';
 
 RuleTester.describe = describe;
 RuleTester.it = it;

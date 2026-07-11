@@ -1,20 +1,8 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { lefthookTemplate } from './init.constants.js';
 import type { InitOptions, InitResult } from './init.types.js';
-
-const lefthookTemplate = `pre-commit:
-  parallel: false
-  jobs:
-    - name: lint
-      run: npx eslint .
-
-    - name: typecheck
-      run: npx tsc --noEmit
-
-    - name: test
-      run: npm run test
-`;
 
 /**
  * Scaffolds the dlinter pre-commit gate into a consumer project. Existing

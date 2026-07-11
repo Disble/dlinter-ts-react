@@ -2,7 +2,7 @@ import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
 import { describe, it } from 'vitest';
 
-import { hookAnatomy } from '../hook-anatomy.js';
+import { hookAnatomy } from '../hook-anatomy/index.js';
 
 RuleTester.describe = describe;
 RuleTester.it = it;

@@ -1,10 +1,6 @@
 import type { Rule } from 'eslint';
 
-// Matches every built-in React hook name, including bare `use`.
-const reactHookNamePattern =
-  '^use(State|Reducer|Effect|LayoutEffect|InsertionEffect|SyncExternalStore|Memo|Callback|Ref|Context|Transition|DeferredValue|ImperativeHandle|DebugValue|Id|Optimistic|ActionState)?$';
-
-const customHookModulePattern = /(^|\/)use-[^/]+$/u;
+import { customHookModulePattern, reactHookNamePattern } from './composition-only-delivery.constants.js';
 
 /**
  * Delivery Layer Rule: delivery files (App.tsx, app/**) compose feature

@@ -2,7 +2,7 @@ import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
 import { describe, it } from 'vitest';
 
-import { strictColocation } from '../strict-colocation.js';
+import { strictColocation } from '../strict-colocation/index.js';
 
 RuleTester.describe = describe;
 RuleTester.it = it;

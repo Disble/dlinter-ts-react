@@ -2,7 +2,7 @@ import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
 import { describe, it } from 'vitest';
 
-import { readonlyProps } from '../readonly-props.js';
+import { readonlyProps } from '../readonly-props/index.js';
 
 RuleTester.describe = describe;
 RuleTester.it = it;

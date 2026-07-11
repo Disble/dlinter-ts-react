@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runInit } from './init.js';
+import { runInit } from './init/index.js';
 
 /**
  * CLI entrypoint: `dlinter init` scaffolds the pre-commit gate in the current project.

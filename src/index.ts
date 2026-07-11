@@ -1,7 +1,7 @@
 import type { Linter } from 'eslint';
 
 import { createDumbUiConfig } from './configs/dumb-ui.js';
-import { createRecommendedConfig } from './configs/recommended.js';
+import { createRecommendedConfig } from './configs/recommended/index.js';
 import { pluginBase } from './plugin.js';
 
 /**
@@ -21,4 +21,4 @@ const dlinter = {
 
 export default dlinter;
 export { createRecommendedConfig };
-export type { InfrastructureBoundaryOptions, RecommendedConfigOptions } from './configs/recommended.types.js';
+export type { InfrastructureBoundaryOptions, RecommendedConfigOptions } from './configs/recommended/index.js';

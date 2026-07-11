@@ -132,6 +132,16 @@ bun run validate    # typecheck + test
 
 The repo self-hosts its own gate (lefthook: fallow audit + typecheck + test). Contributions follow strict TDD — a rule without a failing test proving it fires is a disabled rule — and conventional commits.
 
+### Self-governance
+
+This package enforces its own rules on itself. A permanent test (`src/__tests__/self-governance.test.ts`, part of `bun run validate`) lints `src/**` with the universal subset of the shipped rules — strict colocation, folder ownership, pure barrels, exported-variable JSDoc, `max-lines` — plus a layer contract on import direction:
+
+```
+src/index.ts → src/configs/ → src/plugin.ts → src/rules/     (src/cli/ is a standalone bin)
+```
+
+Every commit and release must pass the same architecture this package sells. Two documented exceptions: rule modules are exported const objects (the ESLint plugin contract requires it), and the package entrypoints (`main`, `bin`) are composition modules, not barrels.
+
 ### Releasing
 
 Releases are automated with [release-please](https://github.com/googleapis/release-please): conventional commits on `main` drive the next semver (`fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major). The bot maintains a Release PR with the computed version and CHANGELOG; **merging that PR** cuts the GitHub release and publishes to npm — after the tarball end-to-end gate passes.

@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import type { Rule } from 'eslint';
 
-const roleSuffixes = ['.constants.ts', '.helpers.ts', '.schema.ts', '.types.ts'];
+import { roleSuffixes } from './folder-ownership.constants.js';
 
 /**
  * Split Module Ownership Rule: when a main module splits into role files

@@ -2,7 +2,7 @@ import { ESLint } from 'eslint';
 import type { Linter } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
-import { createRecommendedConfig } from '../recommended.js';
+import { createRecommendedConfig } from '../recommended/index.js';
 
 const recommendedForWailsLikeProject: Linter.Config[] = [
   ...createRecommendedConfig({
