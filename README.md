@@ -159,7 +159,9 @@ Every commit and release must pass the same architecture this package sells. Two
 
 ### Releasing
 
-Releases are automated with [release-please](https://github.com/googleapis/release-please): conventional commits on `main` drive the next semver (`fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major). The bot maintains a Release PR with the computed version and CHANGELOG; **merging that PR** cuts the GitHub release and publishes to npm — after the tarball end-to-end gate passes.
+Code lands on `main` only through **feature-branch pull requests** — `main` is protected and rejects direct pushes, so CI and SonarCloud analyze the real diff on every change. See [docs/release-and-ci.md](./docs/release-and-ci.md) for branch protection, CI, and the CI-based Sonar setup.
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please): the conventional commits merged into `main` drive the next semver (`fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major). The bot maintains a Release PR with the computed version and CHANGELOG; **merging that PR** cuts the GitHub release and publishes to npm — after the tarball end-to-end gate passes.
 
 Publishing authenticates via [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) (OIDC): no tokens, nothing to rotate, provenance built in. The trusted publisher is configured in the package settings on npmjs.com, bound to this repository's `release-please.yml` workflow. Emergency escape hatch: publish locally with `npm publish` (2FA OTP applies).
 
