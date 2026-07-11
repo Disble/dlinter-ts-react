@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.2.0...dlinter-ts-react-v0.3.0) (2026-07-11)
+
+
+### Features
+
+* **recommended:** flag root-level constants in helpers role files ([5e46939](https://github.com/Disble/dlinter-ts-react/commit/5e46939727e9b5aae3e13196763383f28d41ccdd))
+
+
+### Bug Fixes
+
+* **strict-colocation:** treat specifier-exported root functions as main modules ([864562f](https://github.com/Disble/dlinter-ts-react/commit/864562fcd36bec664e840dae91464e0e52a1a302))
+
 ## [0.2.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.1.0...dlinter-ts-react-v0.2.0) (2026-07-11)
 
 
