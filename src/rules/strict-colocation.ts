@@ -1,4 +1,5 @@
 import type { Rule } from 'eslint';
+import type { Program } from 'estree';
 
 const allChecks = [
   'root-variable',
@@ -11,6 +12,26 @@ const allChecks = [
 ] as const;
 
 const zodImportPattern = /^zod(?:\/.*)?$/u;
+
+function collectSpecifierExportedNames(program: Program): Set<string> {
+  const names = new Set<string>();
+
+  for (const statement of program.body) {
+    if (statement.type === 'ExportDefaultDeclaration' && statement.declaration.type === 'Identifier') {
+      names.add(statement.declaration.name);
+    }
+
+    if (statement.type === 'ExportNamedDeclaration' && statement.declaration === null) {
+      for (const specifier of statement.specifiers) {
+        if (specifier.local.type === 'Identifier') {
+          names.add(specifier.local.name);
+        }
+      }
+    }
+  }
+
+  return names;
+}
 
 /**
  * Strict Colocation Rule: governed main modules export one named function and
@@ -63,11 +84,21 @@ export const strictColocation: Rule.RuleModule = {
     }
 
     if (enabled.has('root-helper-function')) {
-      // Any unexported root-level function is a helper — exported main
-      // functions live under ExportNamedDeclaration and never match here.
+      // Any unexported root-level function is a helper. Inline-exported main
+      // functions live under ExportNamedDeclaration and never match here;
+      // specifier exports (`export default App`, `export { App }`) leave the
+      // declaration directly under Program, so they are resolved by name.
       // Capitalized "private components" are not an exception; that mirrors
       // the enforced behavior of the source system's structural checker.
       visitor['Program > FunctionDeclaration'] = (node: Rule.Node) => {
+        if (node.type === 'FunctionDeclaration' && node.parent.type === 'Program') {
+          const exportedNames = collectSpecifierExportedNames(node.parent);
+
+          if (node.id !== null && exportedNames.has(node.id.name)) {
+            return;
+          }
+        }
+
         context.report({ node, messageId: 'rootHelperFunction' });
       };
     }

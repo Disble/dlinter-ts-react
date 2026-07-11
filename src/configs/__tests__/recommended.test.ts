@@ -157,6 +157,23 @@ describe('recommended config', () => {
     expect(errorRuleIds(result)).toContain('dlinter/strict-colocation');
   });
 
+  it('keeps a delivery main component exported via default specifier green', async () => {
+    const result = await lintVirtualFile(
+      `
+        import { SeasonRoute } from './app/routes/SeasonRoute';
+
+        function App() {
+          return <SeasonRoute />;
+        }
+
+        export default App;
+      `,
+      'src/App.tsx',
+    );
+
+    expect(result?.errorCount).toBe(0);
+  });
+
   it('requires JSDoc on exported functions through the bundled jsdoc plugin', async () => {
     const result = await lintVirtualFile(
       `

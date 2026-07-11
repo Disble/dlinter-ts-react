@@ -44,6 +44,26 @@ ruleTester.run('strict-colocation', strictColocation, {
         export const MAX_RETRIES = 3;
       `,
     },
+    {
+      name: 'root function exported via export default specifier is the main module, not a helper',
+      code: `
+        function App() {
+          return <span />;
+        }
+
+        export default App;
+      `,
+    },
+    {
+      name: 'root function exported via named specifier is not a helper',
+      code: `
+        function Badge() {
+          return <span />;
+        }
+
+        export { Badge };
+      `,
+    },
   ],
   invalid: [
     {
