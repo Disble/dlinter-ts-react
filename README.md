@@ -134,6 +134,8 @@ The type-checked rule tier builds a real TypeScript program via the project serv
 
 ## Development
 
+Contributor and agent documentation lives in [`docs/`](./docs/README.md) — architecture (with diagrams), the severity policy and its override ledger, the add-a-rule recipe, and the testing harnesses.
+
 ```bash
 bun install
 bun run test        # vitest: RuleTester per rule + ESLint-instance integration harness

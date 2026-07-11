@@ -2,6 +2,8 @@
 
 This file gives coding agents project-specific context. Keep it short and update it when workflows change.
 
+Detailed documentation (architecture diagrams, severity-policy ledger + plugin-bump playbook, add-a-rule recipe, testing harness constraints) lives in `docs/` — start at `docs/README.md`, which routes by task.
+
 ## Project Overview
 
 - Primary app or package: `dlinter-ts-react` — an npm package shipping deterministic architecture governance for TS + React projects: custom ESLint rules, architecture-concept presets, and a CLI that scaffolds the pre-commit gate.

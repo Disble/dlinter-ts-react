@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 Project-specific guidance for Claude Code. `AGENTS.md` is the canonical, fuller
-context (architecture, commands, fallow, agent rules) — read it first. This file
+context (architecture, commands, fallow, agent rules) — read it first. Detailed
+docs with diagrams live in `docs/` (`docs/README.md` routes by task). This file
 highlights the non-negotiables.
 
 ## The one principle that's easy to violate
