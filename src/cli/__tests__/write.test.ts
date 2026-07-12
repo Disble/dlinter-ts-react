@@ -156,6 +156,30 @@ describe('writeArtifacts', () => {
     expect(stateFile.lefthookJobs).toEqual(['fallow', 'lint', 'typecheck', 'test']);
   });
 
+  it('consults a prior .dlinter-init.json so a marker-less dlinter job is refreshed, not reported as a foreign collision (MSI-MRG-6 read-back)', () => {
+    // A lefthook.yml whose dlinter job lost its ownership marker on a prior
+    // run (the exact scenario the state-file fallback exists for)...
+    const markerless = 'pre-commit:\n  jobs:\n    - name: fallow\n      run: stale command\n';
+
+    writeFileSync(path.join(cwd, 'lefthook.yml'), markerless);
+    // ...but a prior run recorded that dlinter owns those jobs.
+    writeFileSync(
+      path.join(cwd, STATE_FILE_NAME),
+      `${JSON.stringify({ version: 1, lefthookJobs: ['fallow', 'lint', 'typecheck', 'test'] }, null, 2)}\n`,
+    );
+    writeFileSync(path.join(cwd, 'package.json'), '{}');
+
+    const result = writeArtifacts(cwd, buildArtifacts());
+
+    // Without the read-back, 'fallow' is a foreign name-collision left stale.
+    expect(result.warnings.some((warning) => warning.includes('fallow'))).toBe(false);
+
+    const lefthook = readFileSync(path.join(cwd, 'lefthook.yml'), 'utf8');
+
+    expect(lefthook).toContain('run: bun x fallow audit --quiet');
+    expect(lefthook).not.toContain('run: stale command');
+  });
+
   it('running writeArtifacts twice on the same plan is idempotent — no duplicate jobs, no duplicate warnings', () => {
     writeFileSync(path.join(cwd, 'package.json'), '{}');
 
