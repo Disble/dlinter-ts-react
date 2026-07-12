@@ -107,10 +107,37 @@ Each spread plugin is **pinned to an exact version**, and a drift test locks its
 ## CLI
 
 ```bash
-npx dlinter init
+npx dlinter init [--profile <id>]
 ```
 
-Scaffolds `lefthook.yml` with a lint + typecheck + test pre-commit gate. Never overwrites an existing file — a hand-tuned gate always wins over the template.
+`dlinter init` detects your project's package manager (bun/pnpm/yarn/npm, by
+lockfile) and stack shape, then scaffolds a matching pre-commit gate:
+
+- **`lefthook.yml`** — `fallow`, `lint`, `typecheck`, and `test` jobs, each
+  invoking a `package.json` script through your detected package manager. An
+  existing `lefthook.yml` is never overwritten wholesale — it is **additively
+  merged**: dlinter-owned jobs (marked with an internal `# dlinter:owned`
+  comment) are added or refreshed, and every job you already own — including
+  same-named ones — is left completely untouched (a same-named job without
+  the marker is reported as a conflict, not silently replaced).
+- **`.fallowrc.json`** — a starter Fallow config for the detected stack.
+  Create-only: an existing file is always left untouched.
+- **`package.json` scripts** — any of `audit`/`lint`/`typecheck`/`test`
+  missing from your manifest are added with a stack-appropriate default.
+  Existing scripts are never modified, regardless of their content.
+- **An ESLint config suggestion** — printed to stdout, never written to disk.
+
+Supported stack profiles (detected in this precedence order, first match
+wins): `wails-frontend` (a `frontend/` Wails consumer), `nextjs`, `react-native`,
+`react-spa`, and the universal `ts-lib` fallback. Pass `--profile <id>` to
+force a specific profile instead of detecting one — an unknown id is
+rejected before anything is written. The command prints what it detected (or
+what `--profile` forced) alongside every file/script outcome, so a
+misdetection is visible rather than silent.
+
+Note: the additive `lefthook.yml` merge is implemented with the
+[`yaml`](https://www.npmjs.com/package/yaml) package, which `dlinter init`
+depends on at runtime to preserve comments and hand-written jobs exactly.
 
 ## Compatibility
 
@@ -168,7 +195,7 @@ Publishing authenticates via [npm trusted publishing](https://docs.npmjs.com/tru
 ## Roadmap
 
 - File-size advisory (400-line warning tier ahead of the 500 hard limit)
-- `dlinter init`: prettier scaffold + package-manager detection (bun/pnpm/npm)
+- Multi-surface / monorepo detection for `dlinter init` (v1 always resolves exactly one surface)
 - Layer/boundary preset built on `eslint-plugin-boundaries`
 
 ## License
