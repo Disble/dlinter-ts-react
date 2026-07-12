@@ -95,4 +95,36 @@ describe('mergeLefthookJobs', () => {
     // `write` (PR-4b) persists `stateFile` under this exact, single-source name.
     expect(STATE_FILE_NAME).toBe('.dlinter-init.json');
   });
+
+  it('consults priorOwnedJobNames as an ownership source when comment markers do not survive (MSI-MRG-6 consult path)', () => {
+    const created = mergeLefthookJobs(null, DLINTER_JOBS);
+    // Simulate a lefthook.yml shape where the ownership marker comments were
+    // stripped by some other tool/serializer between dlinter's write and this
+    // re-run — the exact scenario MSI-MRG-6's fallback exists to protect.
+    const strippedText = created.text.replaceAll(/[ \t]*# dlinter:owned.*\r?\n/g, '');
+
+    expect(strippedText).not.toContain('dlinter:owned');
+
+    // Sanity: without consulting prior ownership, the stripped-marker file
+    // makes every dlinter job look like a foreign name collision — this is
+    // the exact bug MSI-MRG-6's read-back was supposed to prevent.
+    const withoutConsult = mergeLefthookJobs(strippedText, DLINTER_JOBS);
+
+    expect(withoutConsult.warnings).toEqual(
+      DLINTER_JOBS.map((job) => ({ kind: 'name-collision', job: job.name })),
+    );
+
+    const priorOwnedJobNames = DLINTER_JOBS.map((job) => job.name);
+    const withConsult = mergeLefthookJobs(strippedText, DLINTER_JOBS, priorOwnedJobNames);
+
+    expect(withConsult.warnings).toEqual([]);
+    expect(withConsult.mode).toBe('merged');
+
+    // Idempotent: re-running with the same consulted ownership list again
+    // still reports no collisions (the fallback restores MSI-MRG-1 for this
+    // file shape instead of permanently breaking it).
+    const secondRun = mergeLefthookJobs(withConsult.text, DLINTER_JOBS, priorOwnedJobNames);
+
+    expect(secondRun.warnings).toEqual([]);
+  });
 });

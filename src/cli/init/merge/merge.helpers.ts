@@ -64,17 +64,29 @@ function buildOwnedJobNode(doc: Document, job: MergeJob): YAMLMap {
 }
 
 /**
- * Reconciles `jobs` into `seq` in place (MSI-MRG-1/2/3/4): a dlinter-owned
+ * Reconciles `jobs` into `seq` in place (MSI-MRG-1/2/3/4/6): a dlinter-owned
  * job already present is refreshed (`run`/`root`) without moving it; a
- * missing job is appended, marked; a same-named job WITHOUT the marker is a
- * foreign job — it is never read or written, and its name is reported as a
- * conflict. Every other item in `seq` is never touched.
+ * missing job is appended, marked; a same-named job WITHOUT the marker is
+ * treated as owned anyway when its name appears in `priorOwnedJobNames` —
+ * the MSI-MRG-6 consult path, populated by the caller (`write`) from the
+ * `.dlinter-init.json` state file when comment markers previously failed a
+ * survival check for this file. Only a same-named job that is neither
+ * marker-owned nor prior-owned is a genuine foreign job — it is never read
+ * or written, and its name is reported as a conflict. Every other item in
+ * `seq` is never touched.
  * @param doc - the document being merged into (needed to create new nodes).
  * @param seq - the resolved `pre-commit.jobs` sequence.
  * @param jobs - the rendered dlinter jobs to reconcile.
+ * @param priorOwnedJobNames - job names already known to be dlinter-owned
+ *   from a previous run's state-file fallback (MSI-MRG-6); defaults to none.
  * @returns the name-collision warnings encountered (MSI-MRG-4).
  */
-export function reconcileJobs(doc: Document, seq: YAMLSeq, jobs: readonly MergeJob[]): readonly MergeWarning[] {
+export function reconcileJobs(
+  doc: Document,
+  seq: YAMLSeq,
+  jobs: readonly MergeJob[],
+  priorOwnedJobNames: readonly string[] = [],
+): readonly MergeWarning[] {
   const warnings: MergeWarning[] = [];
 
   for (const job of jobs) {
@@ -85,7 +97,7 @@ export function reconcileJobs(doc: Document, seq: YAMLSeq, jobs: readonly MergeJ
       continue;
     }
 
-    if (!isOwnedAt(seq, index)) {
+    if (!isOwnedAt(seq, index) && !priorOwnedJobNames.includes(job.name)) {
       warnings.push({ kind: 'name-collision', job: job.name });
       continue;
     }
