@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.4.0...dlinter-ts-react-v0.4.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* **recommended:** stop hook glob leaking strict-colocation onto *.types.ts role files ([#11](https://github.com/Disble/dlinter-ts-react/issues/11)) ([fa3df67](https://github.com/Disble/dlinter-ts-react/commit/fa3df67eac6951ca8015515111fe2c5a86f55372))
+
 ## [0.4.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.3.1...dlinter-ts-react-v0.4.0) (2026-07-12)
 
 
