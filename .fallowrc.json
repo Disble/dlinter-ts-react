@@ -14,5 +14,16 @@
     // local pre-commit gate must too — otherwise duplication ships locally-green
     // and fails only in the cloud (exactly what happened on PR #7).
     "minOccurrences": 2
+  },
+  "rules": {
+    "boundary-violation": "error",
+    "circular-dependencies": "error",
+    "duplicate-exports": "error",
+    "unlisted-dependencies": "error",
+    "unresolved-imports": "error",
+    "unused-dependencies": "error",
+    "unused-files": "error",
+    "unused-exports": "error",
+    "unused-types": "error"
   }
 }
