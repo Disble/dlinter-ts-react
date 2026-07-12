@@ -1,0 +1,16 @@
+pre-commit:
+  parallel: false
+  jobs:
+    # Frontend gates - keep these first, they're fast
+    - name: frontend-fallow
+      run: bun --cwd="frontend" run fallow audit --quiet
+    - name: frontend-lint
+      run: bun --cwd="frontend" run lint
+
+    # Go toolchain - slower, runs after the frontend gates
+    - name: gofmt
+      run: go run ./tools/checkgofmt
+    - name: golangci-lint
+      run: golangci-lint run
+    - name: go-test
+      run: go test ./...

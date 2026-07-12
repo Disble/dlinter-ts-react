@@ -1,0 +1,7 @@
+pre-commit:
+  parallel: false
+  jobs:
+    - name: lint
+      run: npx eslint . --max-warnings=0
+    - name: test
+      run: go test ./...
