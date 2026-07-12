@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.3.1...dlinter-ts-react-v0.4.0) (2026-07-12)
+
+
+### Features
+
+* **recommended:** respect upstream plugin severities and enable type-checked linting ([f49bca6](https://github.com/Disble/dlinter-ts-react/commit/f49bca67a3539391f98b5fe33b235d3e7d47605f))
+
+
+### Bug Fixes
+
+* **sonar:** remediate workflow and lint findings ([389cf7d](https://github.com/Disble/dlinter-ts-react/commit/389cf7d93744a18147aecbb145cb0e4c505294c1))
+
 ## [0.3.1](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.3.0...dlinter-ts-react-v0.3.1) (2026-07-11)
 
 
