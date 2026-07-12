@@ -35,10 +35,30 @@ export function writeFallowFiles(cwd: string, files: readonly RenderedFile[]): F
 }
 
 /**
+ * Reads the dlinter-owned job names persisted by a prior run's state-file
+ * fallback (MSI-MRG-6, ADR-4), or `[]` when no `.dlinter-init.json` exists.
+ * Supplying these to `mergeLefthookJobs` is the consult path that keeps a
+ * one-off comment-marker loss from permanently misclassifying dlinter's own
+ * jobs as foreign name collisions on the next run.
+ */
+function readPriorOwnedJobNames(cwd: string): readonly string[] {
+  const statePath = path.join(cwd, STATE_FILE_NAME);
+
+  if (!existsSync(statePath)) {
+    return [];
+  }
+
+  const state = JSON.parse(readFileSync(statePath, 'utf8')) as { lefthookJobs?: readonly string[] };
+
+  return state.lefthookJobs ?? [];
+}
+
+/**
  * Reconciles `lefthook.yml` via the additive-merge algorithm (MSI-MRG-1..6):
- * reads the existing file (or `null`), delegates the merge to
- * `mergeLefthookJobs`, writes the result, and persists `.dlinter-init.json`
- * whenever ownership fell back to the state file (MSI-MRG-6).
+ * reads the existing file (or `null`), consults any prior `.dlinter-init.json`
+ * for ownership (MSI-MRG-6 read-back), delegates the merge to
+ * `mergeLefthookJobs`, writes the result, and re-persists `.dlinter-init.json`
+ * whenever ownership fell back to the state file.
  * @param cwd - the consumer project root.
  * @param jobs - the rendered lefthook jobs (`render`'s `lefthookJobs`).
  * @returns which paths were created/merged, plus any name-collision warnings.
@@ -46,7 +66,7 @@ export function writeFallowFiles(cwd: string, files: readonly RenderedFile[]): F
 export function writeLefthook(cwd: string, jobs: readonly RenderedJob[]): LefthookWriteReport {
   const lefthookPath = path.join(cwd, LEFTHOOK_FILE_NAME);
   const existingText = existsSync(lefthookPath) ? readFileSync(lefthookPath, 'utf8') : null;
-  const outcome = mergeLefthookJobs(existingText, jobs);
+  const outcome = mergeLefthookJobs(existingText, jobs, readPriorOwnedJobNames(cwd));
 
   writeFileSync(lefthookPath, outcome.text);
 
