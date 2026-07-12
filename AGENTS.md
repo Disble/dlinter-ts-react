@@ -8,7 +8,7 @@ Detailed documentation (architecture diagrams, severity-policy ledger + plugin-b
 
 - Primary app or package: `dlinter-ts-react` — an npm package shipping deterministic architecture governance for TS + React projects: custom ESLint rules, architecture-concept presets, and a CLI that scaffolds the pre-commit gate.
 - Main entry points: `src/index.ts` (plugin + configs + `createRecommendedConfig`), `src/cli/index.ts` (`dlinter` bin).
-- Important directories: `src/rules/` (folder-owned rule modules + `__tests__/`), `src/configs/` (preset factories), `src/cli/` (scaffolder).
+- Important directories: `src/rules/` (folder-owned rule modules + `__tests__/`), `src/configs/` (preset factories), `src/cli/` (scaffolder). `src/cli/init/` composes `detect` (runner + stack-profile + surface, `--profile` override) → `render` (pure `ProjectPlan` → artifacts) → `write` (the only disk-mutating step; `lefthook.yml` additively merges via `merge/`'s `yaml`-backed marker-comment ownership, every other file is create-only). `src/cli/init/init.ts`'s `runInit` is the sole orchestrator of that pipeline.
 
 ## Architecture Notes
 
