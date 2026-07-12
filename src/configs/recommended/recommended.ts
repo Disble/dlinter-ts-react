@@ -344,9 +344,14 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
       },
     },
     // Every production hook follows the anatomy and colocation contract.
+    // The `use-*.ts` glob also matches a hook's role-file siblings
+    // (`use-x.types.ts`, `use-x.helpers.ts`, ...); those are NOT the governed
+    // main module, so exempting them keeps the hook contract — and its full
+    // strict-colocation check set — off role files that legitimately own
+    // interfaces, type aliases, and helpers.
     {
       files: ['src/**/use-*.ts'],
-      ignores: productionTestGlobs,
+      ignores: governedMainModuleExemptGlobs,
       plugins: {
         dlinter: pluginBase,
       },

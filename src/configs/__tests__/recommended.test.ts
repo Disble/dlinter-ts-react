@@ -157,6 +157,29 @@ describe('recommended config', () => {
     expect(errorRuleIds(result)).toContain('dlinter/readonly-props');
   });
 
+  it('accepts interfaces in a hook-sibling *.types.ts role file', async () => {
+    // Regression: the hook block glob `src/**/use-*.ts` also matched
+    // `use-*.types.ts`, leaking the full strict-colocation check set (including
+    // inline-interface) onto a role file whose entire purpose is to hold
+    // interfaces — a self-contradictory diagnostic. Role files are not the
+    // hook main module and must be exempt from the hook contract.
+    const result = await lintVirtualFile(
+      `
+        /**
+         * Result contract for the async list hook.
+         */
+        export interface UseAsyncListResult<T> {
+          readonly isLoading: boolean;
+          readonly items: readonly T[];
+          readonly reload: () => void;
+        }
+      `,
+      'src/shared/hooks/use-async-list/use-async-list.types.ts',
+    );
+
+    expect(errorRuleIds(result)).not.toContain('dlinter/strict-colocation');
+  });
+
   it('enforces colocation in governed main modules', async () => {
     const result = await lintVirtualFile(
       `
