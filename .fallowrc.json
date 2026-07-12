@@ -1,0 +1,18 @@
+{
+  // This file is JSONC: fallow reads these comments; generic JSON tools may not.
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "audit": {
+    // Legacy clone groups (Rule.RuleModule boilerplate across rule modules)
+    // are baselined; audit fails only on NEW duplication. Regenerate with:
+    // bun x fallow dupes --save-baseline .fallow/baselines/dupes.json
+    "dupesBaseline": ".fallow/baselines/dupes.json"
+  },
+  "duplicates": {
+    "mode": "semantic",
+    "threshold": 3,
+    // minOccurrences 2 (not 3): SonarCloud's PR gate flags PAIR clones, so the
+    // local pre-commit gate must too — otherwise duplication ships locally-green
+    // and fails only in the cloud (exactly what happened on PR #7).
+    "minOccurrences": 2
+  }
+}

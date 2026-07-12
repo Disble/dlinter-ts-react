@@ -1,0 +1,6 @@
+{
+  "clone_groups": [
+    "src/rules/composition-only-delivery/composition-only-delivery.ts:10-34|src/rules/hook-anatomy/hook-anatomy.ts:10-33",
+    "src/rules/composition-only-delivery/composition-only-delivery.ts:19-34|src/rules/hook-anatomy/hook-anatomy.ts:18-33|src/rules/readonly-props/readonly-props.ts:17-29"
+  ]
+}
