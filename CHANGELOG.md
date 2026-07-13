@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.5.0...dlinter-ts-react-v0.6.0) (2026-07-13)
+
+
+### Features
+
+* **cli:** scaffold strict fallow baseline with expo-router entry points ([d3be9e5](https://github.com/Disble/dlinter-ts-react/commit/d3be9e57bd884a13d7a52ab1c9a32fc4a209080c))
+
+
+### Bug Fixes
+
+* **configs:** default infrastructure edge sub-options to empty arrays ([54616a8](https://github.com/Disble/dlinter-ts-react/commit/54616a8a51bb2277b29d81cc06087278800199f4))
+
 ## [0.5.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.4.1...dlinter-ts-react-v0.5.0) (2026-07-13)
 
 
