@@ -3,6 +3,11 @@
 ## [0.5.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.4.1...dlinter-ts-react-v0.5.0) (2026-07-13)
 
 
+### ⚠ BREAKING CHANGES
+
+* **cli:** `dlinter init` now **additively merges** its gate jobs into an existing `lefthook.yml` instead of skipping the file when one is present. Before, an existing `lefthook.yml` was left untouched; now dlinter-owned jobs (tagged `# dlinter:owned`) are inserted or refreshed while every foreign job, comment, and blank line is preserved byte-for-byte, and a name collision with an unmarked foreign job is reported rather than overwritten. If your workflow relied on `init` being a no-op over a pre-existing gate, re-run it and review the merged `lefthook.yml`. Re-running `init` is idempotent.
+
+
 ### Features
 
 * **cli:** add RunnerAdapter registry for bun/pnpm/yarn/npm ([5531fb4](https://github.com/Disble/dlinter-ts-react/commit/5531fb49c12ad4d0c3f4284c90a9ba0f127d1a1a))
