@@ -53,9 +53,28 @@ Configured via the GitHub API (`repos/.../branches/main/protection`):
 |---------|-------|-----|
 | Require a pull request | on | No direct pushes |
 | Required approvals | **0** | Solo maintainer — self-merge and Release-PR merge must work |
-| Required status check | `validate` | The CI job must be green to merge |
-| Enforce for admins | **on** | Direct push rejected for *everyone*, admin included |
+| Required status checks | `validate`, `SonarCloud Code Analysis` | Both the CI job **and** the SonarCloud quality gate must be green to merge |
+| Enforce for admins | **on** | Direct push (and a red gate) rejected for *everyone*, admin included |
 | Force pushes / deletions | off | `main` history is immutable |
+
+**The SonarCloud gate is merge-blocking — not advisory.** `SonarCloud Code
+Analysis` is a required status check, so a red quality gate (e.g. new-code
+coverage below the 80% threshold) blocks the merge button for everyone, admins
+included. This was added after a slice merged with new-code coverage at 75.5%
+because only `validate` was required at the time — the scan ran and failed, but
+nothing enforced it. Requiring the check closes that gap at the source.
+
+Verify the gate before merging any PR — the check appears in the PR's checks
+list, and the raw condition is queryable:
+`curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=Disble_dlinter-ts-react&pullRequest=<N>"`
+(status must be `OK`, not `ERROR`). Reproduce coverage locally with
+`bun run test:coverage` (writes `coverage/lcov.info`; Sonar's 80% is on new code).
+
+Scope note: the gate lives on **`main` only**, which is the correct boundary —
+every path to `main` goes through a `main`-targeting PR, so everything that ships
+is gated. Protecting feature branches to gate intermediate/stacked PRs adds
+per-slice coverage friction (and breaks the force-push rebase flow) without
+protecting the shipped artifact any further.
 
 **Why 0 approvals**: with a single maintainer, requiring an approval locks you out
 of your own repository — nobody (not even the release-please bot's PR) could ever

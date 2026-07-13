@@ -68,3 +68,4 @@ Skills live in `.claude/skills/` (Claude Code) and are mirrored in `.agents/skil
 - Do not edit: `dist/**` (build output), `src/rules/__tests__/__fixtures__/**` semantics (fixtures encode rule contracts — changing them changes what a test proves).
 - Always ask before: adding a new dependency, changing the TypeScript peer range, publishing.
 - Preferred style: STRICT TDD — every rule/feature starts with a RED test; a rule without a failing test proving it fires is a disabled rule. Conventional commits, no AI attribution. The lefthook pre-commit gate (fallow audit + typecheck + test) must pass — never bypass it.
+- Never merge a PR with a red **SonarCloud** gate. It is a required status check on `main` (alongside `validate`) — a failing quality gate (e.g. new-code coverage < 80%) blocks the merge for everyone, admins included. Confirm ALL checks are green before `gh pr merge`, not just `validate`. See `docs/release-and-ci.md` § branch protection.
