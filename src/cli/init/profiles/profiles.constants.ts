@@ -53,7 +53,15 @@ export const STACK_PROFILES: readonly StackProfile[] = [
       { script: 'typecheck', kind: 'run', scaffoldScript: 'tsc --noEmit' },
       { script: 'test', kind: 'run', scaffoldScript: 'jest' },
     ],
-    fallow: { entryPoints: ['index.js', 'App.tsx'], ignorePatterns: ['android/**', 'ios/**'] },
+    // expo-router is file-based: every route under app/ (or src/app/) is an
+    // entry, auto-registered via `expo-router/entry` — there is no single
+    // index.js/App.tsx to point at. Both layouts are listed so the profile
+    // fits root-app and src/app projects without render-time detection; a glob
+    // whose base dir is absent simply matches nothing.
+    fallow: {
+      entryPoints: ['src/app/**/*.{ts,tsx}', 'app/**/*.{ts,tsx}'],
+      ignorePatterns: ['android/**', 'ios/**', '.expo/**'],
+    },
   },
   {
     name: 'react-spa',

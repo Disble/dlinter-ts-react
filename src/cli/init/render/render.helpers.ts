@@ -1,6 +1,6 @@
 import type { FallowConfig, GateJobContract, StackProfile } from '../profiles/profiles.types.js';
 import type { RunnerAdapter } from '../runners/runners.types.js';
-import { ESLINT_SNIPPET_PACKAGE, FALLOW_SCHEMA_URL, LEFTHOOK_JOB_NAME_BY_SCRIPT } from './render.constants.js';
+import { ESLINT_SNIPPET_PACKAGE, FALLOW_SCHEMA_URL, LEFTHOOK_JOB_NAME_BY_SCRIPT, STRICT_FALLOW_BASELINE } from './render.constants.js';
 import type { RenderedFile, RenderedJob } from './render.types.js';
 
 /** Resolves a script's lefthook job name, falling back to the script name itself when no override is registered in `LEFTHOOK_JOB_NAME_BY_SCRIPT`. */
@@ -60,6 +60,12 @@ export function renderLefthookJobs(
  * `entryPoints` property (`additionalProperties: false` rejects it); only
  * its per-plugin `entryPoints` sub-key happens to share the name. Using the
  * wrong key would scaffold a file fallow itself refuses to load.
+ *
+ * The profile supplies only the stack-specific surface (`entry` +
+ * `ignorePatterns`); the strict governance body (rules, semantic duplicate
+ * detection, `index.ts` barrel handling) comes from `STRICT_FALLOW_BASELINE`
+ * so a scaffolded config carries the full architecture standard, never a
+ * bare skeleton.
  * @param surfaceDir - the resolved surface directory (`''` = root).
  * @param fallow - the profile's fallow scaffold data, or `null` to opt out.
  * @returns the rendered file, or `null` when the profile has no fallow config.
@@ -73,6 +79,7 @@ export function renderFallowFile(surfaceDir: string, fallow: FallowConfig | null
     $schema: FALLOW_SCHEMA_URL,
     entry: [...fallow.entryPoints],
     ignorePatterns: [...fallow.ignorePatterns],
+    ...STRICT_FALLOW_BASELINE,
   };
 
   return {
