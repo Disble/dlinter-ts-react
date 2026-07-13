@@ -20,6 +20,7 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
+/** Looks up a registered stack profile by name, or fails fast with a fixture-setup error if it isn't registered. */
 function findProfile(name: ProfileName) {
   const profile = STACK_PROFILES.find((candidate) => candidate.name === name);
 
@@ -30,6 +31,7 @@ function findProfile(name: ProfileName) {
   return profile;
 }
 
+/** Builds a minimal single-surface `ProjectPlan` fixture using the `bun` runner adapter and the named profile. */
 function buildPlan(name: ProfileName, surfaceDir: string): ProjectPlan {
   const profile = findProfile(name);
   const runner = RUNNER_ADAPTERS.find((candidate) => candidate.name === 'bun');
