@@ -12,8 +12,10 @@ vi.mock('../init/merge/merge.helpers.js', async (importOriginal) => {
   return { ...actual, verifyMarkersSurvived: vi.fn(actual.verifyMarkersSurvived) };
 });
 
+/** Base URL of the real-world `lefthook.yml` fixtures the merge tests read from. */
 const fixturesDir = new URL('./fixtures/merge/', import.meta.url);
 
+/** Reads a named merge fixture file, resolved relative to `fixturesDir`. */
 function loadFixture(fileName: string): string {
   return readFileSync(new URL(fileName, fixturesDir), 'utf8');
 }
