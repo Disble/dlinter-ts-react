@@ -64,6 +64,44 @@ function errorRuleIds(result: Awaited<ReturnType<typeof lintVirtualFile>>): read
     .map((message) => message.ruleId ?? '');
 }
 
+describe('createRecommendedConfig infrastructure edge', () => {
+  // The boundary rule entry is attached to more than one glob group; every copy
+  // must carry identical options, so reading the first array entry is enough.
+  function infrastructureRuleOptions(
+    configs: Linter.Config[],
+  ): { importPatterns: readonly string[]; runtimeGlobals: readonly string[] } | undefined {
+    for (const config of configs) {
+      const entry = config.rules?.['dlinter/no-infrastructure-in-view'];
+      if (Array.isArray(entry)) {
+        return entry[1] as { importPatterns: readonly string[]; runtimeGlobals: readonly string[] };
+      }
+    }
+    return undefined;
+  }
+
+  it('defaults runtimeGlobals to [] when only importPatterns is given', () => {
+    const options = infrastructureRuleOptions(
+      createRecommendedConfig({ infrastructure: { importPatterns: ['(^|/)infrastructure(/|$)'] } }),
+    );
+
+    expect(options).toEqual({
+      importPatterns: ['(^|/)infrastructure(/|$)'],
+      runtimeGlobals: [],
+    });
+  });
+
+  it('defaults importPatterns to [] when only runtimeGlobals is given', () => {
+    const options = infrastructureRuleOptions(
+      createRecommendedConfig({ infrastructure: { runtimeGlobals: ['window.go'] } }),
+    );
+
+    expect(options).toEqual({
+      importPatterns: [],
+      runtimeGlobals: ['window.go'],
+    });
+  });
+});
+
 describe('recommended config', () => {
   it('flags useEffect inside a view through dlinter/no-view-effects', async () => {
     const result = await lintVirtualFile(
