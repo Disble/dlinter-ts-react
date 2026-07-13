@@ -9,7 +9,7 @@
 Architecture documents don't stop violations; linters do. This package turns architectural constraints that usually live as prose (and get silently violated by humans and AI agents alike) into build-time guarantees.
 
 ```bash
-npm install -D dlinter-ts-react eslint lefthook
+npm install -D dlinter-ts-react eslint lefthook fallow
 ```
 
 ```js
@@ -24,7 +24,7 @@ npx dlinter init      # scaffolds the lefthook pre-commit gate
 npx lefthook install
 ```
 
-That's it. No plugin shopping: `import-x`, `jsdoc`, `sonarjs`, `check-file`, `react`, `react-hooks`, `react-doctor`, and `@typescript-eslint` ship as dependencies of this package, already composed and scoped.
+That's it. The install line's `eslint`, `lefthook`, and `fallow` are the three external tools the scaffolded gate drives — the linter, the git-hook runner, and the architecture audit (`dlinter init` writes a `fallow` job and a `.fallowrc.json`, so `fallow` must be present for the gate to run). Everything else is bundled: `import-x`, `jsdoc`, `sonarjs`, `check-file`, `react`, `react-hooks`, `react-doctor`, and `@typescript-eslint` ship as dependencies of this package, already composed and scoped.
 
 ## The architecture it enforces
 
