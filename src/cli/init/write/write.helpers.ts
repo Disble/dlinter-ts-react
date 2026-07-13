@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { mergeLefthookJobs, STATE_FILE_NAME } from '../merge/index.js';
 import type { RenderedFile, RenderedJob } from '../render/render.types.js';
-import { DEFAULT_JSON_INDENT, LEFTHOOK_FILE_NAME, PACKAGE_JSON_FILE_NAME } from './write.constants.js';
+import { DEFAULT_JSON_INDENT, LEFTHOOK_FILE_NAME, OUTCOME, PACKAGE_JSON_FILE_NAME, UTF8 } from './write.constants.js';
 import type { FallowWriteReport, LefthookWriteReport, ScriptsWriteReport } from './write.types.js';
 
 /**
@@ -48,7 +48,7 @@ function readPriorOwnedJobNames(cwd: string): readonly string[] {
     return [];
   }
 
-  const state = JSON.parse(readFileSync(statePath, 'utf8')) as { lefthookJobs?: readonly string[] };
+  const state = JSON.parse(readFileSync(statePath, UTF8)) as { lefthookJobs?: readonly string[] };
 
   return state.lefthookJobs ?? [];
 }
@@ -65,17 +65,17 @@ function readPriorOwnedJobNames(cwd: string): readonly string[] {
  */
 export function writeLefthook(cwd: string, jobs: readonly RenderedJob[]): LefthookWriteReport {
   const lefthookPath = path.join(cwd, LEFTHOOK_FILE_NAME);
-  const existingText = existsSync(lefthookPath) ? readFileSync(lefthookPath, 'utf8') : null;
+  const existingText = existsSync(lefthookPath) ? readFileSync(lefthookPath, UTF8) : null;
   const outcome = mergeLefthookJobs(existingText, jobs, readPriorOwnedJobNames(cwd));
 
   writeFileSync(lefthookPath, outcome.text);
 
-  const created = outcome.mode === 'created' ? [LEFTHOOK_FILE_NAME] : [];
-  const merged = outcome.mode === 'merged' ? [LEFTHOOK_FILE_NAME] : [];
+  const created = outcome.mode === OUTCOME.CREATED ? [LEFTHOOK_FILE_NAME] : [];
+  const merged = outcome.mode === OUTCOME.MERGED ? [LEFTHOOK_FILE_NAME] : [];
 
-  if (outcome.ownership === 'state-file' && outcome.stateFile) {
+  if (outcome.ownership === OUTCOME.STATE_FILE && outcome.stateFile) {
     writeFileSync(path.join(cwd, STATE_FILE_NAME), `${JSON.stringify(outcome.stateFile, null, 2)}\n`);
-    (outcome.mode === 'created' ? created : merged).push(STATE_FILE_NAME);
+    (outcome.mode === OUTCOME.CREATED ? created : merged).push(STATE_FILE_NAME);
   }
 
   const warnings = outcome.warnings.map(
@@ -109,7 +109,7 @@ export function writeScripts(cwd: string, scripts: Readonly<Record<string, strin
   const skipped: string[] = [];
   const warnings: string[] = [];
   const manifestPath = path.join(cwd, PACKAGE_JSON_FILE_NAME);
-  const raw = readFileSync(manifestPath, 'utf8');
+  const raw = readFileSync(manifestPath, UTF8);
   const manifest = JSON.parse(raw) as { scripts?: Record<string, string> };
   const existingScripts = manifest.scripts ?? {};
   let changed = false;
