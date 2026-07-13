@@ -1,8 +1,35 @@
 #!/usr/bin/env node
+import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import type { InitResult } from './init/index.js';
 import { runInit } from './init/index.js';
+
+/**
+ * True when this module is the process's real entrypoint (the `dlinter` bin),
+ * robust to symlinked invocation. npm links `node_modules/.bin/dlinter` to the
+ * real dist file, so `process.argv[1]` is the symlink while `import.meta.url`
+ * is the resolved target — a raw path `===` is false on Linux/macOS and
+ * silently disables the CLI (Windows uses a `.cmd` shim, hiding the bug). Both
+ * sides are resolved through `realpathSync` before comparison; a plain compare
+ * is the fallback when a path cannot be resolved.
+ * @param moduleUrl - the module's `import.meta.url`.
+ * @param invokedPath - `process.argv[1]`, or `undefined` when merely imported.
+ * @returns whether the CLI should auto-run.
+ */
+export function isProcessEntrypoint(moduleUrl: string, invokedPath: string | undefined): boolean {
+  if (invokedPath === undefined) {
+    return false;
+  }
+
+  const modulePath = fileURLToPath(moduleUrl);
+
+  try {
+    return realpathSync(invokedPath) === realpathSync(modulePath);
+  } catch {
+    return modulePath === invokedPath;
+  }
+}
 
 /**
  * Parses an explicit `--profile <id>` override from the CLI args after
@@ -87,9 +114,7 @@ async function main(): Promise<void> {
 // Only auto-run when this file is the process's actual entrypoint (the
 // `dlinter` bin) — importing it for its exports (e.g. from tests) must never
 // trigger CLI side effects like `process.exitCode` or stdout/stderr writes.
-const isMainModule = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1];
-
-if (isMainModule) {
+if (isProcessEntrypoint(import.meta.url, process.argv[1])) {
   try {
     await main();
   } catch (error: unknown) {
