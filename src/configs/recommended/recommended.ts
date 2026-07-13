@@ -44,8 +44,8 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
     ? [
         'error',
         {
-          importPatterns: [...options.infrastructure.importPatterns],
-          runtimeGlobals: [...options.infrastructure.runtimeGlobals],
+          importPatterns: [...(options.infrastructure.importPatterns ?? [])],
+          runtimeGlobals: [...(options.infrastructure.runtimeGlobals ?? [])],
         },
       ]
     : 'off';

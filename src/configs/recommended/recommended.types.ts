@@ -4,10 +4,10 @@
  * Example for a Wails project: `{ importPatterns: ['(^|/)wailsjs(/|$)'], runtimeGlobals: ['window.go'] }`.
  */
 export interface InfrastructureBoundaryOptions {
-  /** Regex sources matched against import specifiers. */
-  readonly importPatterns: readonly string[];
-  /** `object.property` member paths (e.g. `window.go`). */
-  readonly runtimeGlobals: readonly string[];
+  /** Regex sources matched against import specifiers. Default: `[]`. */
+  readonly importPatterns?: readonly string[];
+  /** `object.property` member paths (e.g. `window.go`). Default: `[]`. */
+  readonly runtimeGlobals?: readonly string[];
 }
 
 /**

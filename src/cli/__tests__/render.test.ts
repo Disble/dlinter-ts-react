@@ -140,6 +140,60 @@ describe('render', () => {
       expect(body.ignorePatterns).toContain('wailsjs/**');
     });
 
+    it('embeds the strict architecture baseline (rules + duplicates + barrel handling) in every rendered fallowrc', () => {
+      for (const profile of STACK_PROFILES) {
+        if (!profile.fallow) {
+          continue;
+        }
+
+        const { fallowFiles } = render(buildPlan(profile.name, profile.surfaceDir));
+        const file = fallowFiles[0];
+
+        if (!file) {
+          throw new Error(`Expected a rendered fallow file for ${profile.name}.`);
+        }
+
+        const body = JSON.parse(file.content) as {
+          rules: Record<string, string>;
+          duplicates: { mode: string; threshold: number; minOccurrences: number };
+          ignoreExports: unknown[];
+          overrides: unknown[];
+        };
+
+        expect(body.rules).toEqual({
+          'boundary-violation': 'error',
+          'circular-dependencies': 'error',
+          'duplicate-exports': 'error',
+          'unlisted-dependencies': 'error',
+          'unresolved-imports': 'error',
+          'unused-dependencies': 'error',
+          'unused-files': 'error',
+          'unused-exports': 'error',
+          'unused-types': 'error',
+        });
+        expect(body.duplicates).toEqual({ mode: 'semantic', threshold: 3, minOccurrences: 3 });
+        expect(body.ignoreExports).toEqual([{ file: 'src/**/index.ts', exports: ['*'] }]);
+        expect(body.overrides).toEqual([
+          { files: ['src/**/index.ts'], rules: { 'unused-types': 'off' } },
+        ]);
+      }
+    });
+
+    it("targets expo-router roots — not classic index.js/App.tsx — in react-native's fallow entry (bug #2)", () => {
+      const { fallowFiles } = render(buildPlan('react-native', ''));
+      const file = fallowFiles[0];
+
+      if (!file) {
+        throw new Error('Expected a rendered fallow file for react-native.');
+      }
+
+      const body = JSON.parse(file.content) as { entry: string[] };
+
+      expect(body.entry).toContain('src/app/**/*.{ts,tsx}');
+      expect(body.entry).not.toContain('index.js');
+      expect(body.entry).not.toContain('App.tsx');
+    });
+
     it('renders no fallow file when a profile declares no fallow config (fallow: null)', () => {
       const base = buildPlan('ts-lib', '');
       const surface = base.surfaces[0];
