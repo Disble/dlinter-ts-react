@@ -3,10 +3,20 @@ import type { RunnerAdapter } from '../runners/runners.types.js';
 import { ESLINT_SNIPPET_PACKAGE, FALLOW_SCHEMA_URL, LEFTHOOK_JOB_NAME_BY_SCRIPT } from './render.constants.js';
 import type { RenderedFile, RenderedJob } from './render.types.js';
 
+/** Resolves a script's lefthook job name, falling back to the script name itself when no override is registered in `LEFTHOOK_JOB_NAME_BY_SCRIPT`. */
 function renderJobName(script: string): string {
   return LEFTHOOK_JOB_NAME_BY_SCRIPT[script] ?? script;
 }
 
+/**
+ * Renders a job's lefthook `run:` command via the plan's runner adapter,
+ * never a raw binary call (MSI-REN-1): `kind: 'exec'` dispatches to
+ * `runner.exec` with the job's declared binary and args, anything else runs
+ * the job's script through `runner.run`.
+ * @param runner - the plan's resolved runner adapter.
+ * @param job - the gate job contract to render a run command for.
+ * @returns the lefthook `run:` command string.
+ */
 function renderJobRun(runner: RunnerAdapter, job: GateJobContract): string {
   if (job.kind === 'exec') {
     if (!job.exec) {
