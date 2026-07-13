@@ -95,6 +95,12 @@ describe('render', () => {
     expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled();
   });
 
+  it('throws when the plan carries no surface — the detect() invariant guard (MSI-DET-6)', () => {
+    const plan: ProjectPlan = { ...buildPlan('ts-lib', ''), surfaces: [] };
+
+    expect(() => render(plan)).toThrow('Cannot render a ProjectPlan with no surfaces.');
+  });
+
   describe('.fallowrc.json (MSI-REN-3)', () => {
     it.each(
       STACK_PROFILES.map((profile) => ({
@@ -132,6 +138,22 @@ describe('render', () => {
       const body = JSON.parse(file.content) as { ignorePatterns: string[] };
 
       expect(body.ignorePatterns).toContain('wailsjs/**');
+    });
+
+    it('renders no fallow file when a profile declares no fallow config (fallow: null)', () => {
+      const base = buildPlan('ts-lib', '');
+      const surface = base.surfaces[0];
+
+      if (!surface) {
+        throw new Error('Test fixture setup failure: expected a surface.');
+      }
+
+      const plan: ProjectPlan = {
+        ...base,
+        surfaces: [{ ...surface, profile: { ...surface.profile, fallow: null } }],
+      };
+
+      expect(render(plan).fallowFiles).toEqual([]);
     });
   });
 
