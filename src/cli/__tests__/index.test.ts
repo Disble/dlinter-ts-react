@@ -1,7 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { InitResult } from '../init/index.js';
-import { formatInitResult, parseProfileFlag } from '../index.js';
+import { formatInitResult, isProcessEntrypoint, parseProfileFlag } from '../index.js';
 
 /** A minimal, realistic InitResult for formatting assertions. */
 function buildResult(overrides: Partial<InitResult> = {}): InitResult {
@@ -15,6 +20,50 @@ function buildResult(overrides: Partial<InitResult> = {}): InitResult {
     ...overrides,
   };
 }
+
+describe('isProcessEntrypoint', () => {
+  let dir = '';
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'dlinter-entrypoint-'));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('is true when the bin was invoked through a symlink to the module (the npm .bin case)', () => {
+    // npm links `node_modules/.bin/dlinter` -> the real dist entry; argv[1] is
+    // the symlink, import.meta.url is the resolved real file. A raw `===` of
+    // the two paths is false on Linux/macOS, silently disabling the CLI.
+    const realEntry = path.join(dir, 'index.mjs');
+    const binSymlink = path.join(dir, 'dlinter');
+
+    writeFileSync(realEntry, '// entry\n');
+    symlinkSync(realEntry, binSymlink, 'file');
+
+    expect(isProcessEntrypoint(pathToFileURL(realEntry).href, binSymlink)).toBe(true);
+  });
+
+  it('is true when invoked directly by its real path', () => {
+    const realEntry = path.join(dir, 'index.mjs');
+
+    writeFileSync(realEntry, '// entry\n');
+
+    expect(isProcessEntrypoint(pathToFileURL(realEntry).href, realEntry)).toBe(true);
+  });
+
+  it('is false when the module is merely imported (no argv[1]) or a different file ran', () => {
+    const realEntry = path.join(dir, 'index.mjs');
+    const other = path.join(dir, 'other.mjs');
+
+    writeFileSync(realEntry, '// entry\n');
+    writeFileSync(other, '// other\n');
+
+    expect(isProcessEntrypoint(pathToFileURL(realEntry).href, undefined)).toBe(false);
+    expect(isProcessEntrypoint(pathToFileURL(realEntry).href, other)).toBe(false);
+  });
+});
 
 describe('parseProfileFlag', () => {
   it('returns undefined when --profile is absent', () => {
