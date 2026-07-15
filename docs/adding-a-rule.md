@@ -24,7 +24,7 @@
   ```
   Single-file rules with no role siblings stay flat (`src/rules/<rule-name>.ts`) — `folder-ownership` only demands a folder once role files exist.
 - [ ] 3. **Register** it in `src/plugin.ts` under its published name (`'<rule-name>': ruleExport`). This is the ONLY place configs learn about rules.
-- [ ] 4. **Wire it into presets** in `src/configs/recommended/recommended.ts` — pick the glob block matching the role it governs, or add a block (BEFORE the final test-reset block). Update `allDlinterRulesOff` in `recommended.constants.ts` so tests stay exempt.
+- [ ] 4. **Wire it into presets** in `src/configs/recommended/recommended.ts` — pick the glob block matching the role it governs, or add a block (BEFORE the final test-reset block, unless the rule must apply to tests — see docs/architecture.md). Update `allDlinterRulesOff` in `recommended.constants.ts` so tests stay exempt. Exception: rules whose contract deliberately governs test files (see the testing-hygiene rules and the `vitestHygiene` option) wire a block AFTER the reset instead, and are never added to `allDlinterRulesOff`.
 - [ ] 5. **Preset-level test** in `src/configs/__tests__/recommended.test.ts` — lint a virtual file through the real preset and assert the rule ID appears (glob wiring is part of the contract; RuleTester can't prove it).
 - [ ] 6. **GREEN + gate**: `bun run validate`. Self-governance runs automatically — if your rule's own source violates the architecture (misplaced constant, impure barrel), the gate tells you.
 - [ ] 7. **Document**: row in the README rules table; JSDoc on every export (enforced).

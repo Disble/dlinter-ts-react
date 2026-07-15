@@ -58,6 +58,9 @@ All rules ship under the `dlinter/` namespace and are individually configurable:
 | `dlinter/pure-index-barrel` | `index.ts` contains re-export statements only |
 | `dlinter/folder-ownership` | Modules with role-file siblings are folder-owned with an `index.ts` entrypoint |
 | `dlinter/require-exported-variable-jsdoc` | Every exported variable carries a JSDoc block |
+| `dlinter/no-partial-package-mock` | *(opt-in, see below)* `vi.mock`/`vi.doMock`/`vi.importActual` never partially replace a bare package specifier through a referenced factory parameter |
+| `dlinter/no-test-timeout-overrides` | *(opt-in, see below)* No per-test/hook timeout overrides in test files; config files may only lower `testTimeout`/`hookTimeout` below the Vitest default |
+| `dlinter/require-spy-restore` | *(opt-in, see below)* Every `vi.spyOn` call is satisfied by an ancestor-scoped `afterEach(() => vi.restoreAllMocks())` |
 
 ## Configuring your infrastructure edge
 
@@ -80,8 +83,46 @@ export default createRecommendedConfig({
 | `deliveryGlobs` | `['src/App.tsx', 'src/app/**/*.{ts,tsx}']` | Which files form the composition-only delivery layer |
 | `tsconfigPath` | `./tsconfig.json` | tsconfig used by the import resolver |
 | `reactCompiler` | `false` | Project compiles with React Compiler → `react-doctor/react-compiler-no-manual-memoization` activates at its upstream severity (manual memoization becomes redundant noise). Without the compiler it stays off — manual memoization is load-bearing |
+| `vitestHygiene` | `false` | Activates the Vitest testing-hygiene rule block (see below) |
 
 Presets are named after **architecture concepts** (`recommended`, `dumb-ui`), never after projects. Your project's specifics are options, not preset names.
+
+## Testing hygiene (opt-in)
+
+`vitestHygiene: true` activates three rules that — deliberately — apply to
+your test files, an exception to the rule that architecture rules stay off
+tests:
+
+```js
+export default createRecommendedConfig({ vitestHygiene: true });
+```
+
+- **`dlinter/no-partial-package-mock`** — a `vi.mock`/`vi.doMock` factory
+  that reads the real module through its first parameter on a bare package
+  specifier couples the test to Vitest's module-loader internals and breaks
+  under `deps.optimizer`; `vi.importActual` on a bare specifier reproduces
+  the identical bug. Use a namespace spy (`import * as pkg from 'pkg'; vi.spyOn(pkg, 'name')`)
+  for non-optimized packages, or a full replacement factory for optimized
+  ones.
+- **`dlinter/no-test-timeout-overrides`** — the default timeout budget is a
+  regression detector; raising it papers over a performance bug instead of
+  fixing it. Banned in test files (positional, options-object, hook, and
+  `vi.setConfig` overrides); in Vitest config files (`vite.config.*`,
+  `vitest.config.*`, `vitest.workspace.*`) only *raising* `testTimeout`
+  above 5000ms or `hookTimeout` above 10000ms is flagged — lowering stays
+  legal.
+- **`dlinter/require-spy-restore`** — every `vi.spyOn` call must be
+  satisfied by an `afterEach(() => vi.restoreAllMocks())` registered at its
+  own or an ancestor `describe` scope; a per-spy `.mockRestore()` does not
+  satisfy the contract. If your Vitest config already sets
+  `restoreMocks: true` globally, pass `{ assumeGlobalRestore: true }` as the
+  rule's option instead of adding `afterEach` blocks everywhere — the rule
+  cannot read your resolved Vitest config, so this is your own declaration.
+
+These rules exist because of a real incident: a partial package mock broke
+silently under Vitest's dependency optimizer (see the rule's JSDoc for the
+first-party repro). Default is `false` — zero behavior change for existing
+consumers until they opt in.
 
 ## What else is in `recommended`
 

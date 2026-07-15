@@ -28,4 +28,13 @@ export interface RecommendedConfigOptions {
    * memoization is load-bearing and the rule would only mislead.
    */
   readonly reactCompiler?: boolean;
+  /**
+   * Activates the Vitest testing-hygiene rule block: `dlinter/no-partial-package-mock`,
+   * `dlinter/no-test-timeout-overrides`, and `dlinter/require-spy-restore` at
+   * `error` on test files, plus `dlinter/no-test-timeout-overrides` on Vitest
+   * config files (`vite.config.*`, `vitest.config.*`, `vitest.workspace.*`).
+   * Default `false` (opt-in): these are the first dlinter rules that APPLY to
+   * tests, so existing consumers see zero behavior change until they opt in.
+   */
+  readonly vitestHygiene?: boolean;
 }

@@ -107,6 +107,9 @@ export const productionTestGlobs = [
 /** Globs for repository automation scripts that run under Node. */
 export const nodeScriptGlobs = ['scripts/**/*.{js,mjs,cjs}'];
 
+/** Globs for Vite/Vitest config files — the raise-only tier of the testing-hygiene block. */
+export const vitestConfigFileGlobs = ['**/vite.config.*', '**/vitest.config.*', '**/vitest.workspace.*'];
+
 /** Globs for application source that runs in the browser. */
 export const sourceBrowserGlobs = ['src/**/*.{ts,tsx,js,jsx}'];
 
@@ -154,7 +157,16 @@ export const reactDoctorSurgicalOverrides: Linter.RulesRecord = {
   'react-doctor/react-compiler-no-manual-memoization': 'off',
 };
 
-/** Full dlinter rule map at severity "off" — the final reset applied to test files. */
+/**
+ * Full ARCHITECTURE dlinter rule map at severity "off" — the final reset
+ * applied to test files so tests stay exempt from every earlier block no
+ * matter what it enabled. This does NOT include the testing-hygiene rules
+ * (`no-partial-package-mock`, `no-test-timeout-overrides`,
+ * `require-spy-restore`): those are the first dlinter rules that deliberately
+ * APPLY to tests, and they are wired separately, AFTER this reset block, by
+ * the `vitestHygiene` option. Adding them here would immediately turn them
+ * back off, falsifying the option's contract.
+ */
 export const allDlinterRulesOff: Linter.RulesRecord = {
   'dlinter/composition-only-delivery': 'off',
   'dlinter/folder-ownership': 'off',
