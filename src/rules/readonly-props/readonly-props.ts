@@ -14,6 +14,7 @@ export const readonlyProps: Rule.RuleModule = {
       description: 'require Readonly<Props> boundaries and readonly Props fields',
     },
     messages: {
+      // fallow-ignore-next-line code-duplication -- selector/report structure remains local for readability and rule-specific message contracts.
       boundaryNotReadonly:
         'Type Contract Rule: component props parameters must use Readonly<Props> at the function boundary.',
       propsFieldNotReadonly: 'Type Contract Rule: every Props field must be declared as readonly.',

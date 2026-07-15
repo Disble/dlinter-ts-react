@@ -2,6 +2,7 @@ import type { Rule } from 'eslint';
 
 import { customHookModulePattern, reactHookNamePattern } from './composition-only-delivery.constants.js';
 
+// fallow-ignore-next-line code-duplication -- selector/report structure remains local for readability and rule-specific message contracts.
 /**
  * Delivery Layer Rule: delivery files (App.tsx, app/**) compose feature
  * entrypoints — they never orchestrate. No React hooks, no custom hook
@@ -16,6 +17,7 @@ export const compositionOnlyDelivery: Rule.RuleModule = {
     messages: {
       reactHookImport:
         'Delivery Rule: composition files cannot import React hooks. Move screen logic into feature hooks or components.',
+      // fallow-ignore-next-line code-duplication -- selector/report structure remains local for readability and rule-specific message contracts.
       reactHookNamespace:
         'Delivery Rule: composition files cannot call React hooks through the React namespace. Move screen logic into feature hooks or components.',
       customHookImport:
