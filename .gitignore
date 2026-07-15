@@ -9,3 +9,6 @@ coverage/
 # local env — never commit
 .env.local
 .env*.local
+
+# Local Codex hooks may contain workstation-specific paths.
+.codex/
