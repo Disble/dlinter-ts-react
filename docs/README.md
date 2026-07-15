@@ -2,7 +2,7 @@
 
 **What this package is**: deterministic architecture governance for TypeScript + React projects. It turns architectural constraints that usually live as prose into build-time guarantees: 9 custom ESLint rules, a pre-composed third-party plugin stack at respected upstream severities, and a CLI that scaffolds the pre-commit gate.
 
-**Who these docs are for**: new developers and LLM agents working on this codebase. Every doc leads with the answer, states file paths precisely, and records the invariants that are cheap to violate and expensive to rediscover.
+**Who these docs are for**: consumers defining project boundaries, plus new developers and LLM agents working on this codebase. Every doc leads with the answer, states file paths precisely, and records the invariants that are cheap to violate and expensive to rediscover.
 
 ## 60-second orientation
 
@@ -20,6 +20,7 @@
 | You want to… | Read | Then |
 |--------------|------|------|
 | Understand the codebase | [architecture.md](./architecture.md) | [testing.md](./testing.md) |
+| Define project-specific import or capability boundaries | [project-defined-boundaries.md](./project-defined-boundaries.md) | [architecture.md](./architecture.md) |
 | Add or change an ESLint rule | [adding-a-rule.md](./adding-a-rule.md) | [testing.md](./testing.md) |
 | Change any rule severity or add a plugin | [severity-policy.md](./severity-policy.md) — **read this BEFORE touching severities** | — |
 | Fix a failing `upstream-severity-drift` test after a dependency bump | [severity-policy.md § Plugin bump playbook](./severity-policy.md#plugin-bump-playbook) | — |
@@ -40,6 +41,7 @@
 | Doc | One job |
 |-----|---------|
 | [architecture.md](./architecture.md) | Layers, module map, enforcement pipeline, the role-file system |
+| [project-defined-boundaries.md](./project-defined-boundaries.md) | Consumer recipes for module zones, external-API ownership, and Clean/Hexagonal dependency flow |
 | [severity-policy.md](./severity-policy.md) | The severity governance policy, the override ledger, drift guards, bump playbook |
 | [adding-a-rule.md](./adding-a-rule.md) | The growth recipe for new rules, step by step |
 | [testing.md](./testing.md) | The four test harnesses, what each can prove, and the gotchas |

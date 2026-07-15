@@ -85,6 +85,8 @@ export default createRecommendedConfig({
 | `reactCompiler` | `false` | Project compiles with React Compiler → `react-doctor/react-compiler-no-manual-memoization` activates at its upstream severity (manual memoization becomes redundant noise). Without the compiler it stays off — manual memoization is load-bearing |
 | `vitestHygiene` | `false` | Activates the Vitest testing-hygiene rule block (see below) |
 
+For module zones, external-API ownership, and Clean/Hexagonal dependency flow beyond the view edge, see [project-defined architecture boundaries](./docs/project-defined-boundaries.md).
+
 Presets are named after **architecture concepts** (`recommended`, `dumb-ui`), never after projects. Your project's specifics are options, not preset names.
 
 ## Testing hygiene (opt-in)
