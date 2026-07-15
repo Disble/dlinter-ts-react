@@ -1,0 +1,6 @@
+{
+  "sonarlint.connectedMode.project": {
+    "connectionId": "disble",
+    "projectKey": "Disble_dlinter-ts-react"
+  }
+}
