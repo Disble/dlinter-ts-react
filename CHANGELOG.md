@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.6.0...dlinter-ts-react-v0.7.0) (2026-07-17)
+
+
+### Features
+
+* add opt-in Vitest testing-hygiene rules ([#22](https://github.com/Disble/dlinter-ts-react/issues/22)) ([f85090d](https://github.com/Disble/dlinter-ts-react/commit/f85090d4b1747ba6ea37241c9e14ecf860340efb))
+
 ## [0.6.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.5.0...dlinter-ts-react-v0.6.0) (2026-07-13)
 
 
