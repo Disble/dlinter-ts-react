@@ -27,6 +27,7 @@ import {
   typescriptPlugin,
   typescriptRecommendedRules,
   typescriptTypeCheckedOnlyRules,
+  vitestConfigFileGlobs,
 } from './recommended.constants.js';
 import type { RecommendedConfigOptions } from './recommended.types.js';
 
@@ -402,5 +403,33 @@ export function createRecommendedConfig(options: RecommendedConfigOptions = {}):
         ...sonarjsTestContextOverrides,
       },
     },
+    // Testing-hygiene block (opt-in via `vitestHygiene`): the first dlinter
+    // rules that deliberately APPLY to tests, so they are wired AFTER the
+    // reset above — sanctioned by docs/architecture.md's block-ordering
+    // note ("place it BEFORE the test reset unless it must apply to tests").
+    ...(options.vitestHygiene
+      ? [
+          {
+            files: productionTestGlobs,
+            plugins: {
+              dlinter: pluginBase,
+            },
+            rules: {
+              'dlinter/no-partial-package-mock': 'error',
+              'dlinter/no-test-timeout-overrides': 'error',
+              'dlinter/require-spy-restore': 'error',
+            },
+          } as Linter.Config,
+          {
+            files: vitestConfigFileGlobs,
+            plugins: {
+              dlinter: pluginBase,
+            },
+            rules: {
+              'dlinter/no-test-timeout-overrides': 'error',
+            },
+          } as Linter.Config,
+        ]
+      : []),
   ];
 }

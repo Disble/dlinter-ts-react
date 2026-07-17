@@ -537,3 +537,70 @@ describe('recommended config — @typescript-eslint severity policy', () => {
     expect(errorRuleIds(result)).toContain('@typescript-eslint/no-explicit-any');
   });
 });
+
+describe('recommended config — vitestHygiene option', () => {
+  // A real describe/it is required: sonarjs/no-empty-test-file is active in
+  // tests by design, and an empty fixture would misfire that unrelated rule.
+  const violatingTestFile = `
+    import { it, vi } from 'vitest';
+
+    vi.mock('season-client', (actual) => ({ ...actual, load: () => [] }));
+
+    it('loads seasons', () => {
+      vi.spyOn(console, 'error');
+      expect(1 + 1).toBe(2);
+    }, 20000);
+  `;
+
+  async function lintWithVitestHygiene(vitestHygiene: boolean, code: string, filePath: string) {
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: [...createRecommendedConfig({ vitestHygiene }), ...virtualHarnessOverrides],
+    });
+    const [result] = await eslint.lintText(code, { filePath });
+    return result;
+  }
+
+  async function lintWithDefaultOptions(code: string, filePath: string) {
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: [...createRecommendedConfig(), ...virtualHarnessOverrides],
+    });
+    const [result] = await eslint.lintText(code, { filePath });
+    return result;
+  }
+
+  it('fires all three testing-hygiene rules on a violating test file when the option is on', async () => {
+    const result = await lintWithVitestHygiene(true, violatingTestFile, 'src/features/seasons/season.test.ts');
+
+    expect(errorRuleIds(result)).toContain('dlinter/no-partial-package-mock');
+    expect(errorRuleIds(result)).toContain('dlinter/no-test-timeout-overrides');
+    expect(errorRuleIds(result)).toContain('dlinter/require-spy-restore');
+  });
+
+  it('keeps the testing-hygiene rules off the same violating file by default', async () => {
+    const result = await lintWithDefaultOptions(violatingTestFile, 'src/features/seasons/season.test.ts');
+
+    expect(errorRuleIds(result)).not.toContain('dlinter/no-partial-package-mock');
+    expect(errorRuleIds(result)).not.toContain('dlinter/no-test-timeout-overrides');
+    expect(errorRuleIds(result)).not.toContain('dlinter/require-spy-restore');
+  });
+
+  it('raises no-test-timeout-overrides on a Vitest config file that raises testTimeout above the default', async () => {
+    const result = await lintWithVitestHygiene(
+      true,
+      `
+        import { defineConfig } from 'vite';
+
+        export default defineConfig({
+          test: {
+            testTimeout: 20000,
+          },
+        });
+      `,
+      'vite.config.ts',
+    );
+
+    expect(errorRuleIds(result)).toContain('dlinter/no-test-timeout-overrides');
+  });
+});

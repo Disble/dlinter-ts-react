@@ -58,6 +58,25 @@ Everything else in sonarjs stays ON in tests — `no-exclusive-tests`, `no-skipp
 | Rule | Default | With option | Reason |
 |------|---------|-------------|--------|
 | `react-doctor/react-compiler-no-manual-memoization` | off | upstream severity via `createRecommendedConfig({ reactCompiler: true })` | Without the compiler, manual memoization is load-bearing and the rule misleads; with it, manual `useMemo`/`useCallback` is redundant noise |
+| `dlinter/no-partial-package-mock`, `dlinter/no-test-timeout-overrides`, `dlinter/require-spy-restore` | off | `error` via `createRecommendedConfig({ vitestHygiene: true })` | Testing-hygiene category — see below |
+
+### Testing hygiene: the first dlinter rules that APPLY to tests
+
+Every other `dlinter/*` rule is architecture-only and stays exempt from
+test files via the final reset block (`allDlinterRulesOff`). The
+`vitestHygiene` option is a deliberate exception, mirroring sonarjs's
+test-context carve-out style but in the opposite direction: instead of
+turning rules OFF for tests, it turns three rules ON for tests, because the
+contract they enforce (module-loader safety, timeout regression detection,
+spy leak prevention) only makes sense inside test code and Vitest config
+files. `dlinter/no-partial-package-mock` and `dlinter/require-spy-restore`
+apply to `productionTestGlobs` only; `dlinter/no-test-timeout-overrides`
+additionally applies to `vite.config.*`/`vitest.config.*`/`vitest.workspace.*`
+(a raise-only check there, since Vitest's own defaults — `testTimeout: 5000`,
+`hookTimeout: 10000` — are the regression-detector baseline). Default `false`:
+zero behavior change for existing consumers until they opt in. The three rule
+IDs are intentionally absent from `allDlinterRulesOff` — see the doc comment
+on that constant in `recommended.constants.ts`.
 
 ### Options-tunes (severity unchanged — not downgrades)
 

@@ -2,6 +2,7 @@ import type { Rule } from 'eslint';
 
 import { hookBlock } from './hook-anatomy.constants.js';
 
+// fallow-ignore-next-line code-duplication -- selector/report structure remains local for readability and rule-specific message contracts.
 /**
  * Hook Anatomy Rule: exported hooks follow one ordering — derived state
  * (useMemo) before callbacks (useCallback) before effects (useEffect) — and
@@ -15,6 +16,7 @@ export const hookAnatomy: Rule.RuleModule = {
     },
     messages: {
       effectBeforeDerived: 'Hook Anatomy Rule: useEffect must come after derived state and callbacks in hooks.',
+      // fallow-ignore-next-line code-duplication -- selector/report structure remains local for readability and rule-specific message contracts.
       memoAfterCallback: 'Hook Anatomy Rule: useMemo derived state must come before useCallback callbacks in hooks.',
       missingReturn: 'Hook Anatomy Rule: hooks must end with a return statement.',
     },
