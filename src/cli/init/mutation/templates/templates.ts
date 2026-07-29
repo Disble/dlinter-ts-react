@@ -3,7 +3,7 @@ import { MUTATION_SCRIPT_NAME, MUTATION_TEMP_DIR } from '../mutation.constants.j
 import { renderGuard } from './templates.helpers.js';
 
 /** Renders the generated artifacts for a portable, staged-line Stryker guard. */
-export function renderMutationFiles(runner: RunnerName): readonly { readonly path: string; readonly content: string }[] {
+export function renderMutationFiles(runner: RunnerName, configFile?: string): readonly { readonly path: string; readonly content: string }[] {
   return [
     { path: 'scripts/dlinter-mutation-staged.mjs', content: renderGuard(runner) },
     {
@@ -17,7 +17,7 @@ export function renderMutationFiles(runner: RunnerName): readonly { readonly pat
           cleanTempDir: 'always',
           tempDirName: MUTATION_TEMP_DIR,
           reporters: ['clear-text'],
-          thresholds: { high: 100, low: 100, break: 100 },
+          thresholds: { high: 80, low: 80, break: 80 },
           vitest: { configFile: 'vitest.dlinter-mutation.mts' },
         },
         null,
@@ -26,7 +26,20 @@ export function renderMutationFiles(runner: RunnerName): readonly { readonly pat
     },
     {
       path: 'vitest.dlinter-mutation.mts',
-      content: `import { defineConfig } from 'vitest/config';
+      content: configFile
+        ? `import { mergeConfig } from 'vitest/config';
+import projectConfig from './${configFile}';
+
+export default (environment) =>
+  mergeConfig(typeof projectConfig === 'function' ? projectConfig(environment) : projectConfig, {
+    test: {
+      include: ['src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['scripts/**', '**/scripts/**', '**/${MUTATION_TEMP_DIR}/**'],
+      deps: { optimizer: { client: { enabled: false }, ssr: { enabled: false } } },
+    },
+  });
+`
+        : `import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {

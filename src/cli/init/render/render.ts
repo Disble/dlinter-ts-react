@@ -23,7 +23,7 @@ export function render(plan: ProjectPlan): RenderedArtifacts {
   const fallowFile = renderFallowFile(surface.dir, surface.profile.fallow);
   const mutation = plan.testMutator;
   const files = mutation
-    ? renderMutationFiles(plan.runner.name).map((file) => ({
+    ? renderMutationFiles(plan.runner.name, surface.mutationConfig).map((file) => ({
         ...file,
         path: surface.dir === '' ? file.path : `${surface.dir}/${file.path}`,
       }))
