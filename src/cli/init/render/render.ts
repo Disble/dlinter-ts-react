@@ -1,4 +1,6 @@
 import type { ProjectPlan } from '../detect/detect.types.js';
+import { MUTATION_GITIGNORE_ENTRY } from '../mutation/mutation.constants.js';
+import { mutationJob, mutationScript, renderMutationFiles } from '../mutation/index.js';
 import { renderEslintSnippet, renderFallowFile, renderLefthookJobs, renderScripts } from './render.helpers.js';
 import type { RenderedArtifacts } from './render.types.js';
 
@@ -19,11 +21,27 @@ export function render(plan: ProjectPlan): RenderedArtifacts {
   }
 
   const fallowFile = renderFallowFile(surface.dir, surface.profile.fallow);
+  const mutation = plan.testMutator;
+  const files = mutation
+    ? renderMutationFiles(plan.runner.name).map((file) => ({
+        ...file,
+        path: surface.dir === '' ? file.path : `${surface.dir}/${file.path}`,
+      }))
+    : [];
+  const scripts = { ...renderScripts(surface.profile), ...(mutation ? { [mutationJob.script]: mutationScript } : {}) };
+  const lefthookJobs = [
+    ...renderLefthookJobs(plan.runner, surface.profile, surface.dir),
+    ...(mutation ? [{ name: mutationJob.name, run: plan.runner.run(mutationJob.run), ...(surface.dir === '' ? {} : { root: surface.dir }) }] : []),
+  ];
 
   return {
-    lefthookJobs: renderLefthookJobs(plan.runner, surface.profile, surface.dir),
+    lefthookJobs,
     fallowFiles: fallowFile ? [fallowFile] : [],
-    scripts: renderScripts(surface.profile),
+    files,
+    gitignoreEntries: mutation ? [MUTATION_GITIGNORE_ENTRY] : [],
+    requiredScripts: mutation ? { [mutationJob.script]: mutationScript } : {},
+    requiredLefthookJobs: mutation ? [{ name: mutationJob.name, run: plan.runner.run(mutationJob.run), ...(surface.dir === '' ? {} : { root: surface.dir }) }] : [],
+    scripts,
     eslintSnippet: renderEslintSnippet(surface.profile),
   };
 }

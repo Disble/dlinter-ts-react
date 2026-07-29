@@ -107,4 +107,11 @@ describe('detect', () => {
     expect(plan.runner).toBeDefined();
     expect(plan.surfaces).toHaveLength(1);
   });
+
+  it('only carries the mutation capability when explicitly requested', () => {
+    writeFileSync(path.join(projectRoot, 'package.json'), '{}');
+
+    expect(detect(projectRoot).testMutator).toBeUndefined();
+    expect(detect(projectRoot, undefined, true).testMutator).toBe(true);
+  });
 });

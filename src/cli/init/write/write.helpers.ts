@@ -4,7 +4,7 @@ import path from 'node:path';
 import { mergeLefthookJobs, STATE_FILE_NAME } from '../merge/index.js';
 import type { RenderedFile, RenderedJob } from '../render/render.types.js';
 import { DEFAULT_JSON_INDENT, LEFTHOOK_FILE_NAME, OUTCOME, PACKAGE_JSON_FILE_NAME, UTF8 } from './write.constants.js';
-import type { FallowWriteReport, LefthookWriteReport, ScriptsWriteReport } from './write.types.js';
+import type { FallowWriteReport, FilesWriteReport, LefthookWriteReport, ScriptsWriteReport } from './write.types.js';
 
 /**
  * Reconciles rendered fallow files onto disk (MSI-REN-3, MSI-OVR-1): every
@@ -15,6 +15,11 @@ import type { FallowWriteReport, LefthookWriteReport, ScriptsWriteReport } from 
  * @returns which paths were created versus left alone.
  */
 export function writeFallowFiles(cwd: string, files: readonly RenderedFile[]): FallowWriteReport {
+  return writeCreateOnlyFiles(cwd, files);
+}
+
+/** Writes files once, optionally verifying the exact content of prior capability artifacts. */
+function writeCreateOnlyFiles(cwd: string, files: readonly RenderedFile[], verifyExisting = false): FallowWriteReport {
   const created: string[] = [];
   const skipped: string[] = [];
 
@@ -22,6 +27,10 @@ export function writeFallowFiles(cwd: string, files: readonly RenderedFile[]): F
     const targetPath = path.join(cwd, file.path);
 
     if (existsSync(targetPath)) {
+      if (verifyExisting && readFileSync(targetPath, UTF8) !== file.content) {
+        throw new Error(`${file.path} already exists with different content; resolve it before enabling this capability.`);
+      }
+
       skipped.push(file.path);
       continue;
     }
@@ -32,6 +41,76 @@ export function writeFallowFiles(cwd: string, files: readonly RenderedFile[]): F
   }
 
   return { created, skipped };
+}
+
+/** Validates capability ownership and content before any consumer files are changed. */
+export function preflightCapabilities(
+  cwd: string,
+  surfaceDir: string,
+  files: readonly RenderedFile[],
+  requiredScripts: Readonly<Record<string, string>>,
+  requiredLefthookJobs: readonly RenderedJob[],
+): void {
+  for (const file of files) {
+    const targetPath = path.join(cwd, file.path);
+
+    if (existsSync(targetPath) && readFileSync(targetPath, UTF8) !== file.content) {
+      throw new Error(`${file.path} already exists with different content; resolve it before enabling this capability.`);
+    }
+  }
+
+  const manifestPath = path.join(cwd, surfaceDir, PACKAGE_JSON_FILE_NAME);
+  const manifest = JSON.parse(readFileSync(manifestPath, UTF8)) as { scripts?: Record<string, string> };
+
+  for (const [name, command] of Object.entries(requiredScripts)) {
+    if (manifest.scripts?.[name] !== undefined && manifest.scripts[name] !== command) {
+      throw new Error(`${PACKAGE_JSON_FILE_NAME}:scripts.${name} already exists with different content; resolve it before enabling this capability.`);
+    }
+  }
+
+  if (requiredLefthookJobs.length === 0) {
+    return;
+  }
+
+  const lefthookPath = path.join(cwd, LEFTHOOK_FILE_NAME);
+  const existingText = existsSync(lefthookPath) ? readFileSync(lefthookPath, UTF8) : null;
+  const outcome = mergeLefthookJobs(existingText, requiredLefthookJobs, readPriorOwnedJobNames(cwd));
+  const collision = outcome.warnings[0];
+
+  if (collision) {
+    throw new Error(`${LEFTHOOK_FILE_NAME} contains a foreign job named "${collision.job}"; resolve it before enabling this capability.`);
+  }
+}
+
+/** Creates capability artifacts only when their exact content is absent. */
+export function writeFiles(cwd: string, files: readonly RenderedFile[]): FilesWriteReport {
+  return { ...writeCreateOnlyFiles(cwd, files, true), merged: [] };
+}
+
+/** Adds generated runtime paths to the selected surface's ignore file once. */
+export function writeGitignore(cwd: string, surfaceDir: string, entries: readonly string[]): FilesWriteReport {
+  if (entries.length === 0) {
+    return { created: [], skipped: [], merged: [] };
+  }
+
+  const relativePath = surfaceDir === '' ? '.gitignore' : `${surfaceDir}/.gitignore`;
+  const targetPath = path.join(cwd, relativePath);
+  const existing = existsSync(targetPath) ? readFileSync(targetPath, UTF8) : '';
+  const missing = entries.filter((entry) => !existing.split(/\r?\n/).includes(entry));
+
+  if (missing.length === 0) {
+    return { created: [], skipped: [relativePath], merged: [] };
+  }
+
+  const prefix = existing === '' || existing.endsWith('\n') ? existing : `${existing}\n`;
+  const comment = '# dlinter: mutation testing runtime artifacts\n';
+  const next = `${prefix}${prefix.includes(comment) ? '' : comment}${missing.join('\n')}\n`;
+  mkdirSync(path.dirname(targetPath), { recursive: true });
+  writeFileSync(targetPath, next);
+
+  return existsSync(targetPath) && existing !== ''
+    ? { created: [], skipped: [], merged: [relativePath] }
+    : { created: [relativePath], skipped: [], merged: [] };
 }
 
 /**

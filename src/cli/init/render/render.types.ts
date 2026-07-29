@@ -25,6 +25,14 @@ export interface RenderedFile {
 export interface RenderedArtifacts {
   readonly lefthookJobs: readonly RenderedJob[];
   readonly fallowFiles: readonly RenderedFile[];
+  /** Create-only capability files, such as the mutation guard and its configs. */
+  readonly files: readonly RenderedFile[];
+  /** Entries additively managed in the consumer surface's .gitignore. */
+  readonly gitignoreEntries: readonly string[];
+  /** Capability scripts that must match exactly before any capability artifacts are written. */
+  readonly requiredScripts: Readonly<Record<string, string>>;
+  /** Capability jobs that must be dlinter-owned before any capability artifacts are written. */
+  readonly requiredLefthookJobs: readonly RenderedJob[];
   /** package.json scripts to scaffold when absent (MSI-SCR-1). */
   readonly scripts: Readonly<Record<string, string>>;
   /** Suggested `eslint.config.js` snippet — surfaced, never written (MSI-REN-5). */

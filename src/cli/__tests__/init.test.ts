@@ -2,10 +2,13 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { InitOptions } from '../init/index.js';
 import { runInit } from '../init/index.js';
+import { installMutationDependencies } from '../init/mutation/mutation.install.js';
+
+vi.mock('../init/mutation/mutation.install.js', () => ({ installMutationDependencies: vi.fn() }));
 
 let consumerRoot = '';
 
@@ -16,6 +19,7 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(consumerRoot, { recursive: true, force: true });
+  vi.mocked(installMutationDependencies).mockClear();
 });
 
 describe('dlinter init', () => {
@@ -29,6 +33,7 @@ describe('dlinter init', () => {
     expect(lefthook).toContain('lint');
     expect(lefthook).toContain('typecheck');
     expect(lefthook).toContain('test');
+    expect(installMutationDependencies).not.toHaveBeenCalled();
   });
 
   // ADR-6 — the one intentional breaking-behavior change of multi-stack-init:
@@ -74,5 +79,33 @@ describe('dlinter init', () => {
 
     expect(result.eslintSnippet).toContain('createRecommendedConfig');
     expect(existsSync(path.join(consumerRoot, 'eslint.config.js'))).toBe(false);
+  });
+
+  it('scaffolds the local Vitest mutation guard with isolated ignored artifacts', async () => {
+    writeFileSync(
+      path.join(consumerRoot, 'package.json'),
+      JSON.stringify({ name: 'consumer', devDependencies: { vitest: '4.1.10' } }, null, 2),
+    );
+
+    const result = await runInit({ cwd: consumerRoot, testMutator: true });
+
+    expect(result.created).toEqual(
+      expect.arrayContaining([
+        'scripts/dlinter-mutation-staged.mjs',
+        'stryker.dlinter.json',
+        'vitest.dlinter-mutation.mts',
+        'package.json:scripts.test:mutation:staged',
+      ]),
+    );
+    expect(readFileSync(path.join(consumerRoot, '.gitignore'), 'utf8')).toContain('.dlinter-mutation-tmp/');
+    expect(readFileSync(path.join(consumerRoot, 'lefthook.yml'), 'utf8')).toContain('test:mutation:staged');
+    expect(installMutationDependencies).toHaveBeenCalledWith(consumerRoot, 'npm');
+  });
+
+  it('rejects --test-mutator without Vitest before writing files', async () => {
+    await expect(runInit({ cwd: consumerRoot, testMutator: true })).rejects.toThrow(/requires Vitest/);
+
+    expect(existsSync(path.join(consumerRoot, 'lefthook.yml'))).toBe(false);
+    expect(installMutationDependencies).not.toHaveBeenCalled();
   });
 });

@@ -12,10 +12,10 @@ import type { ProjectPlan } from './detect.types.js';
  * @param override - explicit `--profile` id; skips profile detection when given.
  * @returns the composed project plan.
  */
-export function detect(cwd: string, override?: string): ProjectPlan {
+export function detect(cwd: string, override?: string, testMutator = false): ProjectPlan {
   const runner = resolveRunner(cwd);
   const profile = resolveProfile(cwd, override);
   const dir = resolveSurfaceDir(cwd, profile);
 
-  return { cwd, runner, surfaces: [{ dir, profile }] };
+  return { cwd, runner, surfaces: [{ dir, profile }], ...(testMutator ? { testMutator: true } : {}) };
 }

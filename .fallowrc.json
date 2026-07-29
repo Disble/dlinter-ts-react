@@ -15,6 +15,8 @@
     // and fails only in the cloud (exactly what happened on PR #7).
     "minOccurrences": 2
   },
+  // Stryker loads its Vitest runner plugin from stryker.dlinter.json at runtime.
+  "ignoreDependencies": ["@stryker-mutator/vitest-runner"],
   "rules": {
     "boundary-violation": "error",
     "circular-dependencies": "error",

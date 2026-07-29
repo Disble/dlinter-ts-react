@@ -36,6 +36,10 @@ function buildArtifacts(overrides: Partial<RenderedArtifacts> = {}): RenderedArt
       { name: 'test', run: 'bun run test' },
     ],
     fallowFiles: [{ path: '.fallowrc.json', content: '{\n  "$schema": "https://example/schema.json"\n}\n' }],
+    files: [],
+    gitignoreEntries: [],
+    requiredScripts: {},
+    requiredLefthookJobs: [],
     scripts: { lint: 'eslint .', typecheck: 'tsc --noEmit', test: 'vitest run' },
     eslintSnippet: "import { createRecommendedConfig } from 'dlinter-ts-react';\n",
     ...overrides,
@@ -192,5 +196,48 @@ describe('writeArtifacts', () => {
     const lefthook = readFileSync(path.join(cwd, 'lefthook.yml'), 'utf8');
 
     expect(lefthook.match(/# dlinter:owned/g)).toHaveLength(4);
+  });
+
+  it('rejects a conflicting capability script before creating capability files or a hook job', () => {
+    writeFileSync(
+      path.join(cwd, 'package.json'),
+      JSON.stringify({ scripts: { 'test:mutation:staged': 'custom mutation command' } }, null, 2),
+    );
+
+    expect(() =>
+      writeArtifacts(
+        cwd,
+        buildArtifacts({
+          files: [{ path: 'scripts/dlinter-mutation-staged.mjs', content: 'generated guard\n' }],
+          requiredScripts: { 'test:mutation:staged': 'node ./scripts/dlinter-mutation-staged.mjs' },
+          requiredLefthookJobs: [{ name: 'test:mutation:staged', run: 'bun run test:mutation:staged' }],
+          scripts: { 'test:mutation:staged': 'node ./scripts/dlinter-mutation-staged.mjs' },
+          lefthookJobs: [{ name: 'test:mutation:staged', run: 'bun run test:mutation:staged' }],
+        }),
+      ),
+    ).toThrow('package.json:scripts.test:mutation:staged already exists with different content');
+
+    expect(existsSync(path.join(cwd, 'scripts/dlinter-mutation-staged.mjs'))).toBe(false);
+    expect(existsSync(path.join(cwd, 'lefthook.yml'))).toBe(false);
+  });
+
+  it('rejects a foreign capability hook job before creating capability files', () => {
+    writeFileSync(path.join(cwd, 'package.json'), '{}');
+    writeFileSync(path.join(cwd, 'lefthook.yml'), 'pre-commit:\n  jobs:\n    - name: test:mutation:staged\n      run: custom\n');
+
+    expect(() =>
+      writeArtifacts(
+        cwd,
+        buildArtifacts({
+          files: [{ path: 'scripts/dlinter-mutation-staged.mjs', content: 'generated guard\n' }],
+          requiredScripts: { 'test:mutation:staged': 'node ./scripts/dlinter-mutation-staged.mjs' },
+          requiredLefthookJobs: [{ name: 'test:mutation:staged', run: 'bun run test:mutation:staged' }],
+          scripts: { 'test:mutation:staged': 'node ./scripts/dlinter-mutation-staged.mjs' },
+          lefthookJobs: [{ name: 'test:mutation:staged', run: 'bun run test:mutation:staged' }],
+        }),
+      ),
+    ).toThrow('lefthook.yml contains a foreign job named "test:mutation:staged"');
+
+    expect(existsSync(path.join(cwd, 'scripts/dlinter-mutation-staged.mjs'))).toBe(false);
   });
 });

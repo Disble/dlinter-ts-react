@@ -26,6 +26,7 @@
 | Fix a failing `upstream-severity-drift` test after a dependency bump | [severity-policy.md § Plugin bump playbook](./severity-policy.md#plugin-bump-playbook) | — |
 | Write or debug tests | [testing.md](./testing.md) | — |
 | Understand CI, branch protection, or the release/Sonar flow | [release-and-ci.md](./release-and-ci.md) | — |
+| Set up Vitest mutation testing | [mutation-testing-poc.md](./mutation-testing-poc.md) — run `dlinter init --test-mutator`, then review POC results and local workflow limits | — |
 
 ## Non-negotiables (the short list)
 
@@ -46,5 +47,6 @@
 | [adding-a-rule.md](./adding-a-rule.md) | The growth recipe for new rules, step by step |
 | [testing.md](./testing.md) | The four test harnesses, what each can prove, and the gotchas |
 | [release-and-ci.md](./release-and-ci.md) | Feature-branch + PR workflow, `main` branch protection, CI, and CI-based SonarCloud analysis |
+| [mutation-testing-poc.md](./mutation-testing-poc.md) | Stryker Mutator POC results, config traps, benchmark data, workflow placement recommendations |
 
 Root-level references: [`README.md`](../README.md) (consumer-facing), [`AGENTS.md`](../AGENTS.md) (agent quick context), [`CLAUDE.md`](../CLAUDE.md) (Claude Code non-negotiables).
