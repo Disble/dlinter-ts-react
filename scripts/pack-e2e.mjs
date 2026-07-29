@@ -74,9 +74,10 @@ try {
 
   run('npx dlinter init', consumerRoot);
   assertDefaultInitScaffold(consumerRoot);
+  assertMutationInitScaffold(consumerRoot);
   assertWailsFrontendInitScaffold(tarballPath);
 
-  console.log('pack e2e: OK — plugin import, recommended preset, and CLI (default + wails-frontend profile) verified from the real tarball.');
+  console.log('pack e2e: OK — plugin import, recommended preset, and CLI (default + mutation + wails-frontend profiles) verified from the real tarball.');
 } finally {
   rmSync(consumerRoot, { recursive: true, force: true });
   rmSync(tarballPath, { force: true });
@@ -122,6 +123,37 @@ function assertDefaultInitScaffold(consumerRoot) {
   if (missingScripts.length > 0) {
     fail(`dlinter init did not scaffold these package.json scripts: ${missingScripts.join(', ')}`);
   }
+}
+
+/** Proves the packed CLI scaffolds the local Vitest mutation guard end-to-end. */
+// fallow-ignore-next-line complexity -- E2E assertions intentionally keep the consumer contract in one reviewable scenario.
+function assertMutationInitScaffold(consumerRoot) {
+  run('git init', consumerRoot);
+  run('npm install -D vitest@4.1.10', consumerRoot);
+  run('npx dlinter init --test-mutator', consumerRoot);
+
+  for (const relativePath of ['scripts/dlinter-mutation-staged.mjs', 'stryker.dlinter.json', 'vitest.dlinter-mutation.mts']) {
+    assertPathExists(consumerRoot, relativePath);
+  }
+
+  const manifest = JSON.parse(readFileSync(path.join(consumerRoot, 'package.json'), 'utf8'));
+
+  if (manifest.scripts?.['test:mutation:staged'] !== 'node ./scripts/dlinter-mutation-staged.mjs') {
+    fail('dlinter init --test-mutator did not scaffold test:mutation:staged');
+  }
+
+  if (
+    manifest.devDependencies?.['@stryker-mutator/core'] !== '9.6.1' ||
+    manifest.devDependencies?.['@stryker-mutator/vitest-runner'] !== '9.6.1'
+  ) {
+    fail('dlinter init --test-mutator did not install exact Stryker dependencies');
+  }
+
+  if (!readFileSync(path.join(consumerRoot, '.gitignore'), 'utf8').includes('.dlinter-mutation-tmp/')) {
+    fail('dlinter init --test-mutator did not ignore its generated sandbox');
+  }
+
+  run('npm run test:mutation:staged', consumerRoot);
 }
 
 /**

@@ -1,5 +1,8 @@
+import path from 'node:path';
+
 import { detect } from './detect/index.js';
 import type { InitOptions, InitResult } from './init.types.js';
+import { installMutationDependencies, validateMutationCapability } from './mutation/index.js';
 import { render } from './render/index.js';
 import { writeArtifacts } from './write/index.js';
 
@@ -14,8 +17,8 @@ import { writeArtifacts } from './write/index.js';
  * @returns the categorized file/script outcomes, the advisory ESLint
  * snippet, and the resolved plan (MSI-RES-1..4).
  */
-export async function runInit({ cwd, profile }: InitOptions): Promise<InitResult> {
-  const plan = detect(cwd, profile);
+export async function runInit({ cwd, profile, testMutator = false }: InitOptions): Promise<InitResult> {
+  const plan = detect(cwd, profile, testMutator);
   const surface = plan.surfaces[0];
 
   if (!surface) {
@@ -23,8 +26,13 @@ export async function runInit({ cwd, profile }: InitOptions): Promise<InitResult
     throw new Error('Cannot init from a ProjectPlan with no surfaces.');
   }
 
+  validateMutationCapability(plan);
   const artifacts = render(plan);
-  const writeResult = writeArtifacts(cwd, artifacts);
+  const writeResult = writeArtifacts(cwd, artifacts, surface.dir);
+
+  if (testMutator) {
+    installMutationDependencies(path.join(cwd, surface.dir), plan.runner.name);
+  }
 
   return {
     ...writeResult,

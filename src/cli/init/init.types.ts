@@ -1,5 +1,6 @@
 import type { ProfileName } from './profiles/profiles.types.js';
 import type { RunnerName } from './runners/runners.types.js';
+import type { WriteResult } from './write/write.types.js';
 
 /**
  * Target location + optional profile override for the init scaffolder.
@@ -8,6 +9,8 @@ export interface InitOptions {
   readonly cwd: string;
   /** Explicit `--profile` id; skips stack-profile detection when given (MSI-DET-3). */
   readonly profile?: string;
+  /** Scaffold the local staged-line mutation guard for a Vitest surface. */
+  readonly testMutator?: boolean;
 }
 
 /**
@@ -26,11 +29,7 @@ export interface ResolvedPlanSummary {
  * Outcome of an init run (MSI-RES-1..4): every file/script outcome from
  * `writeArtifacts`, the advisory ESLint snippet, and the resolved plan.
  */
-export interface InitResult {
-  readonly created: readonly string[];
-  readonly skipped: readonly string[];
-  readonly merged: readonly string[];
-  readonly warnings: readonly string[];
+export interface InitResult extends WriteResult {
   /** Suggested `eslint.config.js` addition — surfaced, never written (MSI-REN-5, MSI-RES-3). */
   readonly eslintSnippet: string;
   readonly resolvedPlan: ResolvedPlanSummary;

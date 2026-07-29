@@ -23,6 +23,13 @@ export interface FallowWriteReport {
   readonly skipped: readonly string[];
 }
 
+/** Create-only generated files and additive gitignore entries. */
+export interface FilesWriteReport {
+  readonly created: readonly string[];
+  readonly skipped: readonly string[];
+  readonly merged: readonly string[];
+}
+
 /** `writeLefthook`'s per-call report — file-level outcome plus any name-collision warnings (MSI-MRG). */
 export interface LefthookWriteReport {
   readonly created: readonly string[];

@@ -1,4 +1,7 @@
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -7,6 +10,7 @@ import { render } from '../init/render/index.js';
 import { STACK_PROFILES } from '../init/profiles/profiles.constants.js';
 import type { ProfileName } from '../init/profiles/profiles.types.js';
 import { RUNNER_ADAPTERS } from '../init/runners/runners.constants.js';
+import type { RunnerName } from '../init/runners/runners.types.js';
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
@@ -32,12 +36,12 @@ function findProfile(name: ProfileName) {
 }
 
 /** Builds a minimal single-surface `ProjectPlan` fixture using the `bun` runner adapter and the named profile. */
-function buildPlan(name: ProfileName, surfaceDir: string): ProjectPlan {
+function buildPlan(name: ProfileName, surfaceDir: string, runnerName: RunnerName = 'bun'): ProjectPlan {
   const profile = findProfile(name);
-  const runner = RUNNER_ADAPTERS.find((candidate) => candidate.name === 'bun');
+  const runner = RUNNER_ADAPTERS.find((candidate) => candidate.name === runnerName);
 
   if (!runner) {
-    throw new Error('Test fixture setup failure: no registered "bun" runner adapter.');
+    throw new Error(`Test fixture setup failure: no registered "${runnerName}" runner adapter.`);
   }
 
   return { cwd: '/virtual-project', runner, surfaces: [{ dir: surfaceDir, profile }] };
@@ -99,6 +103,78 @@ describe('render', () => {
     const plan: ProjectPlan = { ...buildPlan('ts-lib', ''), surfaces: [] };
 
     expect(() => render(plan)).toThrow('Cannot render a ProjectPlan with no surfaces.');
+  });
+
+  it.each([
+    ['bun', "const command = ['bun', 'x', 'stryker'];"],
+    ['npm', "const command = ['npx', 'stryker'];"],
+    ['pnpm', "const command = ['pnpm', 'exec', 'stryker'];"],
+    ['yarn', "const command = ['yarn', 'exec', 'stryker'];"],
+  ] as const)('renders the staged mutation guard for the %s runner', (runner, command) => {
+    const base = buildPlan('react-spa', '');
+    const withoutMutator = render({ ...base, runner: buildPlan('react-spa', '', runner).runner });
+    const withMutator = render({ ...base, runner: buildPlan('react-spa', '', runner).runner, testMutator: true });
+
+    expect(withoutMutator.files).toEqual([]);
+    expect(withoutMutator.gitignoreEntries).toEqual([]);
+    expect(withoutMutator.requiredScripts).toEqual({});
+    expect(withoutMutator.requiredLefthookJobs).toEqual([]);
+    expect(withMutator.files.map((file) => file.path)).toEqual([
+      'scripts/dlinter-mutation-staged.mjs',
+      'stryker.dlinter.json',
+      'vitest.dlinter-mutation.mts',
+    ]);
+    expect(withMutator.gitignoreEntries).toEqual(['.dlinter-mutation-tmp/']);
+    expect(withMutator.scripts['test:mutation:staged']).toBe('node ./scripts/dlinter-mutation-staged.mjs');
+    expect(withMutator.lefthookJobs.map((job) => job.name)).toContain('test:mutation:staged');
+    expect(withMutator.requiredScripts).toEqual({ 'test:mutation:staged': 'node ./scripts/dlinter-mutation-staged.mjs' });
+    expect(withMutator.requiredLefthookJobs).toEqual([{ name: 'test:mutation:staged', run: `${runner} run test:mutation:staged` }]);
+    expect(withMutator.lefthookJobs.find((job) => job.name === 'test:mutation:staged')).toEqual({
+      name: 'test:mutation:staged',
+      run: `${runner} run test:mutation:staged`,
+    });
+    expect(withMutator.files[0]?.content).toContain("replaceAll('\\\\', '/')");
+    expect(withMutator.files[0]?.content).toContain(command);
+
+    const stryker = JSON.parse(withMutator.files[1]?.content ?? '') as Record<string, unknown>;
+    expect(stryker).toEqual({
+      testRunner: 'vitest',
+      plugins: ['@stryker-mutator/vitest-runner'],
+      concurrency: 4,
+      ignoreStatic: true,
+      cleanTempDir: 'always',
+      tempDirName: '.dlinter-mutation-tmp',
+      reporters: ['clear-text'],
+      thresholds: { high: 100, low: 100, break: 100 },
+      vitest: { configFile: 'vitest.dlinter-mutation.mts' },
+    });
+    expect(withMutator.files[2]?.content).toContain("include: ['src/**/*.{test,spec}.{ts,tsx}']");
+    expect(withMutator.files[2]?.content).toContain("exclude: ['scripts/**', '**/scripts/**', '**/.dlinter-mutation-tmp/**']");
+
+    const temporaryDirectory = mkdtempSync(path.join(tmpdir(), 'dlinter-mutation-guard-'));
+    const guardPath = path.join(temporaryDirectory, 'guard.mjs');
+
+    try {
+      writeFileSync(guardPath, withMutator.files[0]?.content ?? '');
+      expect(() => execFileSync(process.execPath, ['--check', guardPath])).not.toThrow();
+    } finally {
+      rmSync(temporaryDirectory, { recursive: true, force: true });
+    }
+  });
+
+  it('roots the staged mutation job at the resolved non-root surface', () => {
+    const { lefthookJobs, files } = render({ ...buildPlan('wails-frontend', 'frontend'), testMutator: true });
+    const mutationJob = lefthookJobs.find((job) => job.name === 'test:mutation:staged');
+
+    expect(mutationJob).toEqual({ name: 'test:mutation:staged', run: 'bun run test:mutation:staged', root: 'frontend' });
+    expect(render({ ...buildPlan('wails-frontend', 'frontend'), testMutator: true }).requiredLefthookJobs).toEqual([
+      { name: 'test:mutation:staged', run: 'bun run test:mutation:staged', root: 'frontend' },
+    ]);
+    expect(files.map((file) => file.path)).toEqual([
+      'frontend/scripts/dlinter-mutation-staged.mjs',
+      'frontend/stryker.dlinter.json',
+      'frontend/vitest.dlinter-mutation.mts',
+    ]);
   });
 
   describe('.fallowrc.json (MSI-REN-3)', () => {

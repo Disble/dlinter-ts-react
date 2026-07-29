@@ -12,3 +12,5 @@ coverage/
 
 # Local Codex hooks may contain workstation-specific paths.
 .codex/
+# dlinter: mutation testing runtime artifacts
+.dlinter-mutation-tmp/

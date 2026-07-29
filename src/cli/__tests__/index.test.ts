@@ -3,10 +3,10 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { InitResult } from '../init/index.js';
-import { formatInitResult, isProcessEntrypoint, parseProfileFlag } from '../index.js';
+import { formatInitResult, isProcessEntrypoint, main, parseInitFlags } from '../index.js';
 
 /** A minimal, realistic InitResult for formatting assertions. */
 function buildResult(overrides: Partial<InitResult> = {}): InitResult {
@@ -65,18 +65,19 @@ describe('isProcessEntrypoint', () => {
   });
 });
 
-describe('parseProfileFlag', () => {
-  it('returns undefined when --profile is absent', () => {
-    expect(parseProfileFlag([])).toBeUndefined();
-    expect(parseProfileFlag(['--help'])).toBeUndefined();
+describe('parseInitFlags', () => {
+  it('returns no options when init flags are absent', () => {
+    expect(parseInitFlags([])).toEqual({});
+    expect(parseInitFlags(['--help'])).toEqual({});
+    expect(Object.hasOwn(parseInitFlags([]), 'profile')).toBe(false);
   });
 
-  it('extracts the value immediately following --profile (MSI-DET-3)', () => {
-    expect(parseProfileFlag(['--profile', 'react-spa'])).toBe('react-spa');
+  it('extracts --profile and --test-mutator', () => {
+    expect(parseInitFlags(['--profile', 'react-spa', '--test-mutator'])).toEqual({ profile: 'react-spa', testMutator: true });
   });
 
   it('rejects a --profile flag with no following value', () => {
-    expect(() => parseProfileFlag(['--profile'])).toThrow(/requires a value/);
+    expect(() => parseInitFlags(['--profile'])).toThrow(/requires a value/);
   });
 });
 
@@ -120,5 +121,47 @@ describe('formatInitResult', () => {
 
     const withoutSnippet = formatInitResult(buildResult());
     expect(withoutSnippet.some((line) => line.includes('suggested'))).toBe(false);
+  });
+});
+
+describe('main', () => {
+  let dir = '';
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'dlinter-main-'));
+    writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'consumer' }));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('writes usage without initializing for an unsupported command', async () => {
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    await main(['node', 'dlinter', 'help'], dir);
+
+    expect(stderr).toHaveBeenCalledWith('Usage: dlinter init [--profile <id>] [--test-mutator]\n');
+    stderr.mockRestore();
+    process.exitCode = undefined;
+  });
+
+  it('runs init and prints its rendered result for the init command', async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await main(['node', 'dlinter', 'init'], dir);
+
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining('detected: runner=npm profile=ts-lib surface=.\n'));
+    expect(stdout).toHaveBeenCalledWith('created lefthook.yml\n');
+    stdout.mockRestore();
+  });
+
+  it('parses only arguments following the init command', async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await main(['--profile', 'react-spa', 'init'], dir);
+
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining('profile=ts-lib'));
+    stdout.mockRestore();
   });
 });

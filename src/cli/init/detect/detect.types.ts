@@ -19,4 +19,6 @@ export interface ProjectPlan {
   readonly cwd: string;
   readonly runner: RunnerAdapter;
   readonly surfaces: readonly Surface[];
+  /** Enables the opt-in local mutation-testing capability. */
+  readonly testMutator?: boolean;
 }

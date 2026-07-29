@@ -32,26 +32,22 @@ export function isProcessEntrypoint(moduleUrl: string, invokedPath: string | und
 }
 
 /**
- * Parses an explicit `--profile <id>` override from the CLI args after
- * `init` (MSI-DET-3). Rejects `--profile` with no following value before
- * `runInit` ever runs.
+ * Parses supported `init` capability flags before `runInit` runs.
  * @param argv - CLI arguments following the `init` command.
- * @returns the requested profile id, or `undefined` when `--profile` is absent.
+ * @returns the options requested by the caller.
  */
-export function parseProfileFlag(argv: readonly string[]): string | undefined {
+export function parseInitFlags(argv: readonly string[]): { readonly profile?: string; readonly testMutator?: true } {
   const flagIndex = argv.indexOf('--profile');
+  const value = flagIndex === -1 ? undefined : argv[flagIndex + 1];
 
-  if (flagIndex === -1) {
-    return undefined;
-  }
-
-  const value = argv[flagIndex + 1];
-
-  if (!value) {
+  if (flagIndex !== -1 && !value) {
     throw new Error('--profile requires a value, e.g. --profile ts-lib');
   }
 
-  return value;
+  return {
+    ...(value === undefined ? {} : { profile: value }),
+    ...(argv.includes('--test-mutator') ? { testMutator: true } : {}),
+  };
 }
 
 /**
@@ -91,20 +87,19 @@ export function formatInitResult(result: InitResult): readonly string[] {
 }
 
 /**
- * CLI entrypoint: `dlinter init [--profile <id>]` scaffolds the pre-commit
+ * CLI entrypoint: `dlinter init [--profile <id>] [--test-mutator]` scaffolds the pre-commit
  * gate in the current project.
  */
-async function main(): Promise<void> {
-  const command = process.argv[2];
+export async function main(argv = process.argv, cwd = process.cwd()): Promise<void> {
+  const command = argv[2];
 
   if (command !== 'init') {
-    process.stderr.write('Usage: dlinter init [--profile <id>]\n');
+    process.stderr.write('Usage: dlinter init [--profile <id>] [--test-mutator]\n');
     process.exitCode = 1;
     return;
   }
 
-  const profile = parseProfileFlag(process.argv.slice(3));
-  const result = await runInit({ cwd: process.cwd(), ...(profile === undefined ? {} : { profile }) });
+  const result = await runInit({ cwd, ...parseInitFlags(argv.slice(3)) });
 
   for (const line of formatInitResult(result)) {
     process.stdout.write(`${line}\n`);
