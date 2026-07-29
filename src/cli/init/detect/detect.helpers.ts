@@ -23,3 +23,10 @@ export function resolveSurfaceDir(cwd: string, profile: StackProfile): string {
 
   return existsSync(surfacePackageJson) ? profile.surfaceDir : '';
 }
+
+/** Resolves the first supported test config from the selected project surface. */
+export function resolveMutationConfig(cwd: string, surfaceDir: string): string | undefined {
+  const configFiles = ['vitest.config.ts', 'vite.config.ts'];
+
+  return configFiles.find((file) => existsSync(path.join(cwd, surfaceDir, file)));
+}

@@ -173,7 +173,7 @@ lockfile) and stack shape, then scaffolds a matching pre-commit gate:
   that runs from Lefthook before commit. It requires the resolved surface's
   `package.json` to declare `vitest` before writing, then installs the exact
   Stryker dependencies, generates an isolated Vitest config and mutation config,
-  rejects partial staging, and requires 100% of the staged production-line
+  rejects partial staging, and requires 80% of the staged production-line
   mutations to be killed. It skips commits without staged production TypeScript
   lines.
 

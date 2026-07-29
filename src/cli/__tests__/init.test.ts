@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -59,6 +59,22 @@ describe('dlinter init', () => {
     expect(result.resolvedPlan.profile).toBe('ts-lib');
     expect(result.resolvedPlan.surfaceDir).toBe('');
     expect(typeof result.resolvedPlan.runner).toBe('string');
+  });
+
+  it('uses the resolved Wails frontend surface lockfile for the gate runner', async () => {
+    writeFileSync(path.join(consumerRoot, 'wails.json'), '{}\n');
+    writeFileSync(path.join(consumerRoot, 'package-lock.json'), '{}\n');
+    mkdirSync(path.join(consumerRoot, 'frontend'));
+    writeFileSync(path.join(consumerRoot, 'frontend', 'package.json'), JSON.stringify({ name: 'frontend' }, null, 2));
+    writeFileSync(path.join(consumerRoot, 'frontend', 'bun.lock'), '\n');
+
+    const result = await runInit({ cwd: consumerRoot });
+
+    expect(result.resolvedPlan).toEqual({ runner: 'bun', profile: 'wails-frontend', surfaceDir: 'frontend' });
+
+    const lefthook = readFileSync(path.join(consumerRoot, 'lefthook.yml'), 'utf8');
+    expect(lefthook).toContain('root: frontend');
+    expect(lefthook).toContain('run: bun run lint');
   });
 
   it('honors an explicit --profile override instead of detecting (MSI-DET-3)', async () => {

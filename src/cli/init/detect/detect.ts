@@ -1,6 +1,8 @@
+import path from 'node:path';
+
 import { resolveProfile } from '../profiles/index.js';
 import { resolveRunner } from '../runners/index.js';
-import { resolveSurfaceDir } from './detect.helpers.js';
+import { resolveMutationConfig, resolveSurfaceDir } from './detect.helpers.js';
 import type { ProjectPlan } from './detect.types.js';
 
 /**
@@ -13,9 +15,15 @@ import type { ProjectPlan } from './detect.types.js';
  * @returns the composed project plan.
  */
 export function detect(cwd: string, override?: string, testMutator = false): ProjectPlan {
-  const runner = resolveRunner(cwd);
   const profile = resolveProfile(cwd, override);
   const dir = resolveSurfaceDir(cwd, profile);
+  const runner = resolveRunner(path.join(cwd, dir));
+  const mutationConfig = testMutator ? resolveMutationConfig(cwd, dir) : undefined;
 
-  return { cwd, runner, surfaces: [{ dir, profile }], ...(testMutator ? { testMutator: true } : {}) };
+  return {
+    cwd,
+    runner,
+    surfaces: [{ dir, profile, ...(mutationConfig ? { mutationConfig } : {}) }],
+    ...(testMutator ? { testMutator: true } : {}),
+  };
 }

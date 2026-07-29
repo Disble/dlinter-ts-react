@@ -9,6 +9,8 @@ export interface Surface {
   /** Relative to `cwd`: `''` = flat project root, e.g. `'frontend'` = subdir. */
   readonly dir: string;
   readonly profile: StackProfile;
+  /** Existing surface-local Vitest or Vite config used by the mutation harness. */
+  readonly mutationConfig?: string;
 }
 
 /**
