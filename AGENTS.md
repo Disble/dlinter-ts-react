@@ -63,6 +63,7 @@ Skills live in `.claude/skills/` (Claude Code) and are mirrored in `.agents/skil
 | `severity-triage` | Changing bundled-plugin severities, adding a plugin, or a failing `upstream-severity-drift` test |
 | `preset-testing` | Writing/debugging preset or rule tests — harness selection and known traps |
 | `release-deployment` | Deploying or publishing a new npm release through release-please |
+| `mutation-testing-scaffold` | Scaffolding or validating a consumer `dlinter init --test-mutator` mutation guard |
 
 ## Agent Rules
 
