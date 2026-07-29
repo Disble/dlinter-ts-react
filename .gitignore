@@ -14,3 +14,4 @@ coverage/
 .codex/
 # dlinter: mutation testing runtime artifacts
 .dlinter-mutation-tmp/
+.codegraph/**
