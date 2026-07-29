@@ -170,10 +170,12 @@ lockfile) and stack shape, then scaffolds a matching pre-commit gate:
   Existing scripts are never modified, regardless of their content.
 - **An ESLint config suggestion** — printed to stdout, never written to disk.
 - **`--test-mutator`** — for Vitest projects, adds a staged-line Stryker guard
-  that runs from Lefthook before commit. It installs the exact Stryker
-  dependencies, generates an isolated Vitest config and mutation config, rejects
-  partial staging, and requires 100% of the staged production-line mutations to
-  be killed. It skips commits without staged production TypeScript lines.
+  that runs from Lefthook before commit. It requires the resolved surface's
+  `package.json` to declare `vitest` before writing, then installs the exact
+  Stryker dependencies, generates an isolated Vitest config and mutation config,
+  rejects partial staging, and requires 100% of the staged production-line
+  mutations to be killed. It skips commits without staged production TypeScript
+  lines.
 
 Supported stack profiles (detected in this precedence order, first match
 wins): `wails-frontend` (a `frontend/` Wails consumer), `nextjs`, `react-native`,
