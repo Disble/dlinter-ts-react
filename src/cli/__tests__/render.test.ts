@@ -145,7 +145,7 @@ describe('render', () => {
       cleanTempDir: 'always',
       tempDirName: '.dlinter-mutation-tmp',
       reporters: ['clear-text'],
-      thresholds: { high: 100, low: 100, break: 100 },
+      thresholds: { high: 80, low: 80, break: 80 },
       vitest: { configFile: 'vitest.dlinter-mutation.mts' },
     });
     expect(withMutator.files[2]?.content).toContain("include: ['src/**/*.{test,spec}.{ts,tsx}']");
