@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.7.0...dlinter-ts-react-v0.8.0) (2026-07-29)
+
+
+### Features
+
+* **cli:** add staged mutation guard scaffolding ([7ce648e](https://github.com/Disble/dlinter-ts-react/commit/7ce648ec0614a83a6bc45ec8f3867fd2d95e47f0))
+
 ## [0.7.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.6.0...dlinter-ts-react-v0.7.0) (2026-07-17)
 
 
