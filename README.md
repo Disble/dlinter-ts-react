@@ -150,7 +150,7 @@ Each spread plugin is **pinned to an exact version**, and a drift test locks its
 ## CLI
 
 ```bash
-npx dlinter init [--profile <id>]
+npx dlinter init [--profile <id>] [--test-mutator]
 ```
 
 `dlinter init` detects your project's package manager (bun/pnpm/yarn/npm, by
@@ -169,6 +169,11 @@ lockfile) and stack shape, then scaffolds a matching pre-commit gate:
   missing from your manifest are added with a stack-appropriate default.
   Existing scripts are never modified, regardless of their content.
 - **An ESLint config suggestion** — printed to stdout, never written to disk.
+- **`--test-mutator`** — for Vitest projects, adds a staged-line Stryker guard
+  that runs from Lefthook before commit. It installs the exact Stryker
+  dependencies, generates an isolated Vitest config and mutation config, rejects
+  partial staging, and requires 100% of the staged production-line mutations to
+  be killed. It skips commits without staged production TypeScript lines.
 
 Supported stack profiles (detected in this precedence order, first match
 wins): `wails-frontend` (a `frontend/` Wails consumer), `nextjs`, `react-native`,
