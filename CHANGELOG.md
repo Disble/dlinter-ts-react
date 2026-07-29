@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.1](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.8.0...dlinter-ts-react-v0.8.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **docs:** clarify mutation guard eligibility ([0e459d5](https://github.com/Disble/dlinter-ts-react/commit/0e459d502b01735419867a3471ec02eec75f5cac))
+* **docs:** clarify mutation guard eligibility ([0bbbd08](https://github.com/Disble/dlinter-ts-react/commit/0bbbd08d1f7d53e0bcf03031033654759636ac5e))
+
 ## [0.8.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.7.0...dlinter-ts-react-v0.8.0) (2026-07-29)
 
 
