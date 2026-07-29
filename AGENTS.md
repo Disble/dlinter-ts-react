@@ -62,6 +62,7 @@ Skills live in `.claude/skills/` (Claude Code) and are mirrored in `.agents/skil
 | `add-lint-rule` | Adding or extending a `dlinter/*` rule — TDD recipe, layer rules, preset wiring |
 | `severity-triage` | Changing bundled-plugin severities, adding a plugin, or a failing `upstream-severity-drift` test |
 | `preset-testing` | Writing/debugging preset or rule tests — harness selection and known traps |
+| `release-deployment` | Deploying or publishing a new npm release through release-please |
 
 ## Agent Rules
 
