@@ -11,7 +11,6 @@
 ### Bug Fixes
 
 * **cli:** preserve surface runner and Vitest config ([c7f8773](https://github.com/Disble/dlinter-ts-react/commit/c7f87733decbad16ea23bebe66780222041a3dcf))
-* **cli:** preserve Wails mutation configuration ([8f59834](https://github.com/Disble/dlinter-ts-react/commit/8f598348fbc8abbb3cf0a62c7f3b4b71572c6c64))
 
 ## [0.8.1](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.8.0...dlinter-ts-react-v0.8.1) (2026-07-29)
 
