@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.8.1...dlinter-ts-react-v0.9.0) (2026-07-29)
+
+
+### Features
+
+* **mutation:** lower default score threshold ([ff222b8](https://github.com/Disble/dlinter-ts-react/commit/ff222b89754ad142d5b1a763f8e4cbd4bf832380))
+
+
+### Bug Fixes
+
+* **cli:** preserve surface runner and Vitest config ([c7f8773](https://github.com/Disble/dlinter-ts-react/commit/c7f87733decbad16ea23bebe66780222041a3dcf))
+* **cli:** preserve Wails mutation configuration ([8f59834](https://github.com/Disble/dlinter-ts-react/commit/8f598348fbc8abbb3cf0a62c7f3b4b71572c6c64))
+
 ## [0.8.1](https://github.com/Disble/dlinter-ts-react/compare/dlinter-ts-react-v0.8.0...dlinter-ts-react-v0.8.1) (2026-07-29)
 
 
