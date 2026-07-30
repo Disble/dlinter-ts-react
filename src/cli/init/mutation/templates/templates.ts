@@ -1,28 +1,30 @@
-import type { RunnerName } from '../../runners/runners.types.js';
-import { MUTATION_SCRIPT_NAME, MUTATION_TEMP_DIR } from '../mutation.constants.js';
+import { MUTATION_SCRIPT_NAME } from '../mutation.constants.js';
 import { renderGuard } from './templates.helpers.js';
 
 /** Renders the generated artifacts for a portable, staged-line Stryker guard. */
-export function renderMutationFiles(runner: RunnerName, configFile?: string): readonly { readonly path: string; readonly content: string }[] {
+export function renderMutationFiles(configFile?: string): readonly { readonly path: string; readonly content: string }[] {
   return [
-    { path: 'scripts/dlinter-mutation-staged.mjs', content: renderGuard(runner) },
+    { path: 'scripts/dlinter-mutation-staged.mjs', content: renderGuard() },
     {
-      path: 'stryker.dlinter.json',
-      content: `${JSON.stringify(
-        {
-          testRunner: 'vitest',
-          plugins: ['@stryker-mutator/vitest-runner'],
-          concurrency: 4,
-          ignoreStatic: true,
-          cleanTempDir: 'always',
-          tempDirName: MUTATION_TEMP_DIR,
-          reporters: ['clear-text'],
-          thresholds: { high: 80, low: 80, break: 80 },
-          vitest: { configFile: 'vitest.dlinter-mutation.mts' },
-        },
-        null,
-        2,
-      )}\n`,
+      path: 'stryker.dlinter.mjs',
+      content: `import { execFileSync } from 'node:child_process';
+import path from 'node:path';
+
+const cwd = process.cwd();
+const gitCommonDir = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd, encoding: 'utf8' }).trim();
+
+export default {
+  testRunner: 'vitest',
+  plugins: ['@stryker-mutator/vitest-runner'],
+  concurrency: 4,
+  ignoreStatic: true,
+  cleanTempDir: 'always',
+  tempDirName: path.join(gitCommonDir, 'dlinter', '.dlinter-mutation-tmp'),
+  reporters: ['clear-text'],
+  thresholds: { high: 80, low: 80, break: 80 },
+  vitest: { configFile: 'vitest.dlinter-mutation.mts' },
+};
+`,
     },
     {
       path: 'vitest.dlinter-mutation.mts',
@@ -34,7 +36,7 @@ export default (environment) =>
   mergeConfig(typeof projectConfig === 'function' ? projectConfig(environment) : projectConfig, {
     test: {
       include: ['src/**/*.{test,spec}.{ts,tsx}'],
-      exclude: ['scripts/**', '**/scripts/**', '**/${MUTATION_TEMP_DIR}/**'],
+      exclude: ['scripts/**', '**/scripts/**'],
       deps: { optimizer: { client: { enabled: false }, ssr: { enabled: false } } },
     },
   });
@@ -44,7 +46,7 @@ export default (environment) =>
 export default defineConfig({
   test: {
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['scripts/**', '**/scripts/**', '**/${MUTATION_TEMP_DIR}/**'],
+    exclude: ['scripts/**', '**/scripts/**'],
     deps: { optimizer: { client: { enabled: false }, ssr: { enabled: false } } },
   },
 });

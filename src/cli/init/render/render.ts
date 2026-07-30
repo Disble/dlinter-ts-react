@@ -1,5 +1,4 @@
 import type { ProjectPlan } from '../detect/detect.types.js';
-import { MUTATION_GITIGNORE_ENTRY } from '../mutation/mutation.constants.js';
 import { mutationJob, mutationScript, renderMutationFiles } from '../mutation/index.js';
 import { renderEslintSnippet, renderFallowFile, renderLefthookJobs, renderScripts } from './render.helpers.js';
 import type { RenderedArtifacts } from './render.types.js';
@@ -23,7 +22,7 @@ export function render(plan: ProjectPlan): RenderedArtifacts {
   const fallowFile = renderFallowFile(surface.dir, surface.profile.fallow);
   const mutation = plan.testMutator;
   const files = mutation
-    ? renderMutationFiles(plan.runner.name, surface.mutationConfig).map((file) => ({
+    ? renderMutationFiles(surface.mutationConfig).map((file) => ({
         ...file,
         path: surface.dir === '' ? file.path : `${surface.dir}/${file.path}`,
       }))
@@ -38,7 +37,7 @@ export function render(plan: ProjectPlan): RenderedArtifacts {
     lefthookJobs,
     fallowFiles: fallowFile ? [fallowFile] : [],
     files,
-    gitignoreEntries: mutation ? [MUTATION_GITIGNORE_ENTRY] : [],
+    gitignoreEntries: [],
     requiredScripts: mutation ? { [mutationJob.script]: mutationScript } : {},
     requiredLefthookJobs: mutation ? [{ name: mutationJob.name, run: plan.runner.run(mutationJob.run), ...(surface.dir === '' ? {} : { root: surface.dir }) }] : [],
     scripts,

@@ -97,7 +97,7 @@ describe('dlinter init', () => {
     expect(existsSync(path.join(consumerRoot, 'eslint.config.js'))).toBe(false);
   });
 
-  it('scaffolds the local Vitest mutation guard with isolated ignored artifacts', async () => {
+  it('scaffolds the local Vitest mutation guard with an isolated Git sandbox', async () => {
     writeFileSync(
       path.join(consumerRoot, 'package.json'),
       JSON.stringify({ name: 'consumer', devDependencies: { vitest: '4.1.10' } }, null, 2),
@@ -108,12 +108,12 @@ describe('dlinter init', () => {
     expect(result.created).toEqual(
       expect.arrayContaining([
         'scripts/dlinter-mutation-staged.mjs',
-        'stryker.dlinter.json',
+        'stryker.dlinter.mjs',
         'vitest.dlinter-mutation.mts',
         'package.json:scripts.test:mutation:staged',
       ]),
     );
-    expect(readFileSync(path.join(consumerRoot, '.gitignore'), 'utf8')).toContain('.dlinter-mutation-tmp/');
+    expect(existsSync(path.join(consumerRoot, '.gitignore'))).toBe(false);
     expect(readFileSync(path.join(consumerRoot, 'lefthook.yml'), 'utf8')).toContain('test:mutation:staged');
     expect(installMutationDependencies).toHaveBeenCalledWith(consumerRoot, 'npm');
   });

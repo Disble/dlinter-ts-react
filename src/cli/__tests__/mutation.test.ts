@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ProjectPlan } from '../init/detect/detect.types.js';
 import { installMutationDependencies } from '../init/mutation/mutation.install.js';
+import { renderMutationFiles } from '../init/mutation/templates/templates.js';
 import { validateMutationCapability } from '../init/mutation/mutation.validation.js';
 import { STACK_PROFILES } from '../init/profiles/profiles.constants.js';
 import { RUNNER_ADAPTERS } from '../init/runners/runners.constants.js';
@@ -74,6 +75,20 @@ describe('mutation capability', () => {
 
   it('rejects a plan with no resolved surface', () => {
     expect(() => validateMutationCapability({ ...buildPlan(true), surfaces: [] })).toThrow('Cannot validate mutation capability');
+  });
+
+  it('renders a shared Git-metadata sandbox and a locally resolved Stryker invocation', () => {
+    const files = renderMutationFiles();
+    const config = files.find((file) => file.path === 'stryker.dlinter.mjs');
+    const guard = files.find((file) => file.path === 'scripts/dlinter-mutation-staged.mjs');
+
+    expect(config?.content).toContain("['rev-parse', '--path-format=absolute', '--git-common-dir']");
+    expect(config?.content).toContain("tempDirName: path.join(gitCommonDir, 'dlinter', '.dlinter-mutation-tmp')");
+    expect(guard?.content).toContain("['rev-parse', '--path-format=absolute', '--git-common-dir']");
+    expect(guard?.content).toContain("path.join(gitCommonDir, 'dlinter')");
+    expect(guard?.content).toContain("require.resolve('@stryker-mutator/core/bin/stryker.js')");
+    expect(guard?.content).toContain("spawnSync(process.execPath, [stryker, 'run', 'stryker.dlinter.mjs'");
+    expect(guard?.content).not.toMatch(/\b(npx|pnpm|yarn|bun)\b/);
   });
 
   it('writes matching capability files once and rejects changed existing content', () => {

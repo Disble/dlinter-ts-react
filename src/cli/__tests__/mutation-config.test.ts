@@ -43,14 +43,14 @@ export default (environment) =>
   mergeConfig(typeof projectConfig === 'function' ? projectConfig(environment) : projectConfig, {
     test: {
       include: ['src/**/*.{test,spec}.{ts,tsx}'],
-      exclude: ['scripts/**', '**/scripts/**', '**/.dlinter-mutation-tmp/**'],
+      exclude: ['scripts/**', '**/scripts/**'],
       deps: { optimizer: { client: { enabled: false }, ssr: { enabled: false } } },
     },
   });
 `);
-      expect(JSON.parse(readFileSync(path.join(consumerRoot, 'frontend', 'stryker.dlinter.json'), 'utf8'))).toMatchObject({
-        thresholds: { high: 80, low: 80, break: 80 },
-      });
+      expect(readFileSync(path.join(consumerRoot, 'frontend', 'stryker.dlinter.mjs'), 'utf8')).toContain(
+        'thresholds: { high: 80, low: 80, break: 80 }',
+      );
     },
   );
 });

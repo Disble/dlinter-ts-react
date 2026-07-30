@@ -132,7 +132,7 @@ function assertMutationInitScaffold(consumerRoot) {
   run('npm install -D vitest@4.1.10', consumerRoot);
   run('npx dlinter init --test-mutator', consumerRoot);
 
-  for (const relativePath of ['scripts/dlinter-mutation-staged.mjs', 'stryker.dlinter.json', 'vitest.dlinter-mutation.mts']) {
+  for (const relativePath of ['scripts/dlinter-mutation-staged.mjs', 'stryker.dlinter.mjs', 'vitest.dlinter-mutation.mts']) {
     assertPathExists(consumerRoot, relativePath);
   }
 
@@ -147,10 +147,6 @@ function assertMutationInitScaffold(consumerRoot) {
     manifest.devDependencies?.['@stryker-mutator/vitest-runner'] !== '9.6.1'
   ) {
     fail('dlinter init --test-mutator did not install exact Stryker dependencies');
-  }
-
-  if (!readFileSync(path.join(consumerRoot, '.gitignore'), 'utf8').includes('.dlinter-mutation-tmp/')) {
-    fail('dlinter init --test-mutator did not ignore its generated sandbox');
   }
 
   run('npm run test:mutation:staged', consumerRoot);

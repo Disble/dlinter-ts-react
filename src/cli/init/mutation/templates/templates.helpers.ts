@@ -1,18 +1,16 @@
-import type { RunnerName } from '../../runners/runners.types.js';
 import { MUTATION_TEMP_DIR } from '../mutation.constants.js';
 
 /** Builds the no-shell guard; all staged-file selection happens inside Node for Windows portability. */
-export function renderGuard(runner: RunnerName): string {
-  const command = runner === 'npm' ? "['npx', 'stryker']" : runner === 'pnpm' ? "['pnpm', 'exec', 'stryker']" : runner === 'yarn' ? "['yarn', 'exec', 'stryker']" : "['bun', 'x', 'stryker']";
-
+export function renderGuard(): string {
   return `import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 
-const command = ${command};
+const require = createRequire(import.meta.url);
 const cwd = process.cwd();
 const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' }).trim();
-const gitDir = execFileSync('git', ['rev-parse', '--git-dir'], { cwd, encoding: 'utf8' }).trim();
+const gitCommonDir = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd, encoding: 'utf8' }).trim();
 const surface = path.relative(root, cwd).replaceAll('\\\\', '/');
 const prefix = surface === '' ? '' : \`\${surface}/\`;
 const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { cwd, encoding: 'utf8' });
@@ -47,7 +45,7 @@ if (ranges.length === 0) {
   process.exit(0);
 }
 
-const cacheDir = path.resolve(root, gitDir, 'dlinter');
+const cacheDir = path.join(gitCommonDir, 'dlinter');
 const cacheFile = path.join(cacheDir, 'stryker-staged.json');
 try {
   if (existsSync(cacheFile)) JSON.parse(readFileSync(cacheFile, 'utf8'));
@@ -55,8 +53,9 @@ try {
   rmSync(cacheFile, { force: true });
 }
 mkdirSync(cacheDir, { recursive: true });
-rmSync(path.join(cwd, '${MUTATION_TEMP_DIR}'), { recursive: true, force: true });
-const result = spawnSync(command[0], [...command.slice(1), 'run', 'stryker.dlinter.json', '--incremental', '--incrementalFile', cacheFile, '--mutate', ranges.join(','), '--cleanTempDir', 'always'], { cwd, stdio: 'inherit' });
+rmSync(path.join(cacheDir, '${MUTATION_TEMP_DIR}'), { recursive: true, force: true });
+const stryker = require.resolve('@stryker-mutator/core/bin/stryker.js');
+const result = spawnSync(process.execPath, [stryker, 'run', 'stryker.dlinter.mjs', '--incremental', '--incrementalFile', cacheFile, '--mutate', ranges.join(','), '--cleanTempDir', 'always'], { cwd, stdio: 'inherit' });
 process.exit(result.status ?? 1);
 `;
 }

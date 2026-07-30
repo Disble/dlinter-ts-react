@@ -6,5 +6,3 @@ export const MUTATION_SCRIPT_NAME = 'test:mutation:staged';
 
 /** A dedicated directory prevents mutation sandboxes leaking into ordinary Vitest runs. */
 export const MUTATION_TEMP_DIR = '.dlinter-mutation-tmp';
-/** Gitignore directory pattern for the generated mutation sandbox. */
-export const MUTATION_GITIGNORE_ENTRY = `${MUTATION_TEMP_DIR}/`;

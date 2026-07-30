@@ -105,15 +105,10 @@ describe('render', () => {
     expect(() => render(plan)).toThrow('Cannot render a ProjectPlan with no surfaces.');
   });
 
-  it.each([
-    ['bun', "const command = ['bun', 'x', 'stryker'];"],
-    ['npm', "const command = ['npx', 'stryker'];"],
-    ['pnpm', "const command = ['pnpm', 'exec', 'stryker'];"],
-    ['yarn', "const command = ['yarn', 'exec', 'stryker'];"],
-  ] as const)('renders the staged mutation guard for the %s runner', (runner, command) => {
+  it('renders the staged mutation guard artifacts and lefthook job', () => {
     const base = buildPlan('react-spa', '');
-    const withoutMutator = render({ ...base, runner: buildPlan('react-spa', '', runner).runner });
-    const withMutator = render({ ...base, runner: buildPlan('react-spa', '', runner).runner, testMutator: true });
+    const withoutMutator = render(base);
+    const withMutator = render({ ...base, testMutator: true });
 
     expect(withoutMutator.files).toEqual([]);
     expect(withoutMutator.gitignoreEntries).toEqual([]);
@@ -121,41 +116,42 @@ describe('render', () => {
     expect(withoutMutator.requiredLefthookJobs).toEqual([]);
     expect(withMutator.files.map((file) => file.path)).toEqual([
       'scripts/dlinter-mutation-staged.mjs',
-      'stryker.dlinter.json',
+      'stryker.dlinter.mjs',
       'vitest.dlinter-mutation.mts',
     ]);
-    expect(withMutator.gitignoreEntries).toEqual(['.dlinter-mutation-tmp/']);
+    expect(withMutator.gitignoreEntries).toEqual([]);
     expect(withMutator.scripts['test:mutation:staged']).toBe('node ./scripts/dlinter-mutation-staged.mjs');
     expect(withMutator.lefthookJobs.map((job) => job.name)).toContain('test:mutation:staged');
     expect(withMutator.requiredScripts).toEqual({ 'test:mutation:staged': 'node ./scripts/dlinter-mutation-staged.mjs' });
-    expect(withMutator.requiredLefthookJobs).toEqual([{ name: 'test:mutation:staged', run: `${runner} run test:mutation:staged` }]);
+    expect(withMutator.requiredLefthookJobs).toEqual([{ name: 'test:mutation:staged', run: 'bun run test:mutation:staged' }]);
     expect(withMutator.lefthookJobs.find((job) => job.name === 'test:mutation:staged')).toEqual({
       name: 'test:mutation:staged',
-      run: `${runner} run test:mutation:staged`,
+      run: 'bun run test:mutation:staged',
     });
-    expect(withMutator.files[0]?.content).toContain("replaceAll('\\\\', '/')");
-    expect(withMutator.files[0]?.content).toContain(command);
 
-    const stryker = JSON.parse(withMutator.files[1]?.content ?? '') as Record<string, unknown>;
-    expect(stryker).toEqual({
-      testRunner: 'vitest',
-      plugins: ['@stryker-mutator/vitest-runner'],
-      concurrency: 4,
-      ignoreStatic: true,
-      cleanTempDir: 'always',
-      tempDirName: '.dlinter-mutation-tmp',
-      reporters: ['clear-text'],
-      thresholds: { high: 80, low: 80, break: 80 },
-      vitest: { configFile: 'vitest.dlinter-mutation.mts' },
-    });
-    expect(withMutator.files[2]?.content).toContain("include: ['src/**/*.{test,spec}.{ts,tsx}']");
-    expect(withMutator.files[2]?.content).toContain("exclude: ['scripts/**', '**/scripts/**', '**/.dlinter-mutation-tmp/**']");
+  });
+
+  it('renders staged mutation files that resolve and run Stryker locally', () => {
+    const { files } = render({ ...buildPlan('react-spa', ''), testMutator: true });
+    expect(files[0]?.content).toContain("replaceAll('\\\\', '/')");
+    expect(files[0]?.content).toContain("require.resolve('@stryker-mutator/core/bin/stryker.js')");
+    expect(files[0]?.content).toContain("spawnSync(process.execPath, [stryker, 'run', 'stryker.dlinter.mjs'");
+    expect(files[0]?.content).not.toMatch(/\b(npx|pnpm|yarn|bun)\b/);
+    expect(files[1]?.content).toContain("['rev-parse', '--path-format=absolute', '--git-common-dir']");
+    expect(files[1]?.content).toContain("tempDirName: path.join(gitCommonDir, 'dlinter', '.dlinter-mutation-tmp')");
+    expect(files[2]?.content).toContain("include: ['src/**/*.{test,spec}.{ts,tsx}']");
+    expect(files[2]?.content).toContain("exclude: ['scripts/**', '**/scripts/**']");
+
+  });
+
+  it('emits a syntactically valid staged mutation guard', () => {
+    const { files } = render({ ...buildPlan('react-spa', ''), testMutator: true });
 
     const temporaryDirectory = mkdtempSync(path.join(tmpdir(), 'dlinter-mutation-guard-'));
     const guardPath = path.join(temporaryDirectory, 'guard.mjs');
 
     try {
-      writeFileSync(guardPath, withMutator.files[0]?.content ?? '');
+      writeFileSync(guardPath, files[0]?.content ?? '');
       expect(() => execFileSync(process.execPath, ['--check', guardPath])).not.toThrow();
     } finally {
       rmSync(temporaryDirectory, { recursive: true, force: true });
@@ -172,7 +168,7 @@ describe('render', () => {
     ]);
     expect(files.map((file) => file.path)).toEqual([
       'frontend/scripts/dlinter-mutation-staged.mjs',
-      'frontend/stryker.dlinter.json',
+      'frontend/stryker.dlinter.mjs',
       'frontend/vitest.dlinter-mutation.mts',
     ]);
   });

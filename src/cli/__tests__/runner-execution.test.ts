@@ -77,5 +77,7 @@ describe('RunnerAdapter.run — executable round-trip proof (MSI-REN-2)', () => 
         rmSync(projectRoot, { recursive: true, force: true });
       }
     },
+    // Yarn Berry initializes its lockfile before it can run the probe on a cold cache.
+    30_000,
   );
 });
